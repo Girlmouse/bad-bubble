@@ -75,12 +75,21 @@
            ============================================ */
        /* ---------- Bubble visuals & performance ---------- */
 .bubble {
-  position: absolute;
+   position: absolute;
   width: var(--bubble-size, 72px);
   height: var(--bubble-size, 72px);
   border-radius: 50%;
   pointer-events: auto;
   cursor: pointer;
+  ...
+}
+
+/* Invisible larger tap area */
+.bubble::before {
+  content: "";
+  position: absolute;
+  inset: -14px;   /* expands clickable area */
+}
 
   /* airy glossy look with slightly stronger whites for contrast */
   background: radial-gradient(circle at 30% 30%,
@@ -488,7 +497,7 @@ this.homeBtn = document.getElementById('home-button');;
 
     // update bubbles
     for (const b of this.bubbles) {
-      if (b.alive) b.update(dt, this.width, this.height);
+     if (b.alive) b.update(dt * 0.35, this.width, this.height);
     }
 
     if (this.state === 'playing') {
