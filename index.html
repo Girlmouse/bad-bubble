@@ -18,8 +18,10 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            touch-action: manipulation; /* Prevent double-tap zoom on mobile */
+            touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            /* Constant warm beige background for browser window */
+            background: #f5e6d3;
         }
 
         body {
@@ -27,8 +29,6 @@
             justify-content: center;
             align-items: center;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            transition: background 0.5s ease;
-            background: #ece6dd; /* warm cream beige */
         }
 
         /* ============================================
@@ -38,11 +38,10 @@
             position: relative;
             width: min(90vw, 400px);
             height: min(85vh, 700px);
-            border: 3px solid rgba(255, 255, 255, 0.4);
+            border: 3px solid rgba(255, 255, 255, 0.25);
             border-radius: 24px;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(2px);
+            transition: background 0.5s ease;
         }
 
         /* ============================================
@@ -71,76 +70,74 @@
         }
 
         /* ============================================
-           BUBBLE STYLES
+           BUBBLE STYLES - Soapy finish
            ============================================ */
-/* ---------- Bubble visuals & tap target ---------- */
-.bubble {
-  position: absolute;
-  width: var(--bubble-size, 72px);
-  height: var(--bubble-size, 72px);
-  border-radius: 50%;
-  pointer-events: auto;
-  cursor: pointer;
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            /* Soapy iridescent look with multiple highlight layers */
+            background: 
+                radial-gradient(
+                    ellipse 40% 40% at 25% 20%,
+                    rgba(255, 255, 255, 0.95) 0%,
+                    rgba(255, 255, 255, 0.4) 30%,
+                    transparent 70%
+                ),
+                radial-gradient(
+                    ellipse 30% 20% at 70% 75%,
+                    rgba(255, 255, 255, 0.5) 0%,
+                    transparent 60%
+                ),
+                radial-gradient(
+                    ellipse 100% 100% at 50% 50%,
+                    rgba(255, 255, 255, 0.08) 0%,
+                    rgba(255, 255, 255, 0.15) 40%,
+                    rgba(255, 255, 255, 0.05) 60%,
+                    rgba(255, 255, 255, 0.2) 100%
+                );
+            /* Soapy border and glow */
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.15),
+                0 0 40px rgba(255, 255, 255, 0.08),
+                inset 0 0 20px rgba(255, 255, 255, 0.1),
+                inset -2px -2px 10px rgba(255, 255, 255, 0.15);
+            will-change: transform, left, top;
+            transition: transform 0.1s ease-out;
+        }
 
-  /* visible airy bubble */
-  background: radial-gradient(circle at 30% 25%,
-    rgba(255,255,255,0.95) 0%,
-    rgba(255,255,255,0.38) 50%,
-    rgba(255,255,255,0.18) 100%
-  );
+        .bubble:hover {
+            transform: scale(1.05);
+        }
 
-  outline: 1px solid rgba(255,255,255,0.10);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        .bubble:active {
+            transform: scale(0.95);
+        }
 
-  will-change: transform, opacity;
-  touch-action: none;
-  user-select: none;
-}
+        /* Pop animation */
+        .bubble.popping {
+            animation: popBubble 0.25s ease-out forwards;
+            pointer-events: none;
+        }
 
-/* Invisible larger tap area */
-.bubble::before {
-  content: "";
-  position: absolute;
-  inset: -14px;
-  pointer-events: none; /* IMPORTANT: doesn't block tapping */
-}
+        @keyframes popBubble {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.6; }
+            100% { transform: scale(0); opacity: 0; }
+        }
 
-/* Pop animation */
-.bubble.popping,
-.bubble.silent-pop {
-  transform: scale(0.4) !important;
-  opacity: 0;
-}
+        /* Chain reaction pop - more visible */
+        .bubble.chain-pop {
+            animation: chainPop 0.4s ease-out forwards;
+            pointer-events: none;
+        }
 
-/* container shadow so the playable area reads as "window" */
-#game-container {
-  border-radius: 20px;
-  overflow: hidden;
-  position: relative;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-  border: 2px solid rgba(255,255,255,0.18);
-}
-
-/* small top-right score */
-#score {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  color: rgba(255,255,255,0.92);
-  font-weight: 600;
-  z-index: 40;
-  font-size: 14px;
-}
-
-/* ensure game-over overlay sits above chain pops */
-#game-over-overlay {
-  z-index: 50;
-}
-
-/* tiny responsiveness: reduce bubble size on narrow screens */
-@media (max-width: 420px) {
-  :root { --bubble-size: 60px; }
-}
+        @keyframes chainPop {
+            0% { transform: scale(1); opacity: 1; }
+            30% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
 
         /* ============================================
            GAME OVER SCREEN
@@ -155,7 +152,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(8px);
             z-index: 100;
             opacity: 0;
@@ -233,6 +230,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            background: rgba(0, 0, 0, 0.3);
             z-index: 100;
         }
 
@@ -282,352 +280,614 @@
     </div>
 
     <script>
-     // ---------- Configuration ----------
-const BUBBLE_COUNT = 24;
-const RESPAWN_DELAY = 1500; // ms
-const POP_DURATION = 180; // how long pop animation lasts (ms)
-const BAD_PAUSE_MS = 200;  // micro pause before fart sound
-const CHAIN_STAGGER = 20;  // ms between chained silent pops
-const GRAVITY_DRIFT = -20; // upward pixels per second baseline (negative goes up)
+        /* ============================================
+           GAME CONFIGURATION
+           ============================================ */
+        const CONFIG = {
+            BUBBLE_COUNT: 24,
+            BUBBLE_SIZE_MIN: 38,
+            BUBBLE_SIZE_MAX: 54,
+            RESPAWN_DELAY: 1500,
+            BAD_BUBBLE_DELAY: 200,
+            FLOAT_SPEED: 0.25,
+            WOBBLE_AMOUNT: 0.6,
+            WOBBLE_SPEED: 0.015,
+            COLLISION_PADDING: 8,       // Extra space between bubbles
+            PUSH_STRENGTH: 0.5          // How strongly bubbles push apart
+        };
 
-// sound assets (update paths if your repo differs)
-const POP_SOUND = './assets/pop.mp3';
-const FART_SOUND = './assets/fart.mp3';
+        /* ============================================
+           DARK GRADIENT BACKGROUNDS
+           ============================================ */
+        const GRADIENTS = [
+            'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',  // Deep blue
+            'linear-gradient(135deg, #2d132c 0%, #4a1942 50%, #801336 100%)',  // Deep magenta
+            'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%)',  // Navy
+            'linear-gradient(135deg, #1a1423 0%, #2d1f3d 50%, #4a3158 100%)',  // Deep purple
+            'linear-gradient(135deg, #0b3d2e 0%, #145a44 50%, #1d7a5c 100%)',  // Forest green
+            'linear-gradient(135deg, #1c1c1c 0%, #2d2d44 50%, #3d3d5c 100%)',  // Charcoal purple
+            'linear-gradient(135deg, #2c1810 0%, #4a2c1a 50%, #6b4423 100%)',  // Deep bronze
+            'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',  // Deep teal
+            'linear-gradient(135deg, #1f1013 0%, #3d1f25 50%, #5c2e38 100%)',  // Deep rose
+            'linear-gradient(135deg, #1a1a0f 0%, #2d2d1a 50%, #4a4a2a 100%)'   // Deep olive
+        ];
 
-// ---------- Utility ----------
-function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-function rand(min, max) { return min + Math.random() * (max - min); }
-function now() { return performance.now(); }
+        /* ============================================
+           AUDIO GENERATION (Web Audio API)
+           ============================================ */
+        const AudioManager = {
+            context: null,
 
-// ---------- Bubble Class ----------
-class Bubble {
-  constructor(id, container, size) {
-    this.id = id;
-    this.container = container;
-    this.size = size;
-    this.element = document.createElement('div');
-    this.element.className = 'bubble';
-    this.element.dataset.id = id;
-    // initial random phase for wobble
-    this.phase = Math.random() * Math.PI * 2;
-    this.reset(true);
-    container.appendChild(this.element);
-  }
+            init() {
+                if (!this.context) {
+                    this.context = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.context.state === 'suspended') {
+                    this.context.resume();
+                }
+            },
 
-  reset(initial = false) {
-    // position inside container bounds
-    const rect = this.container.getBoundingClientRect();
-    const pad = 12;
-    this.x = rand(pad, rect.width - this.size - pad);
-    // start distributed vertically (initial round start higher density)
-    this.y = initial ? rand(10, rect.height * 0.5) : rand(rect.height * 0.6, rect.height - this.size - 8);
-    this.vx = rand(-6, 6); // horizontal drift px/sec
-    // upward baseline plus some randomness
-    this.vy = rand(-20, -40); // px/sec (negative -> move up)
-    this.wobbleAmp = rand(6, 16);
-    this.wobbleSpeed = rand(0.8, 1.6);
-    this.alive = true;
-    // render immediately
-    this.render();
-    this.element.classList.remove('popping');
-    this.element.style.opacity = '1';
-  }
+            playPop() {
+                if (!this.context) return;
+                
+                const ctx = this.context;
+                const now = ctx.currentTime;
 
-  render() {
-    // use translate3d for best performance
-    this.element.style.transform = `translate3d(${Math.round(this.x)}px, ${Math.round(this.y)}px, 0)`;
-  }
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
 
-  update(dt, width, height) {
-    // dt in seconds
-    // vertical + horizontal movement
-    this.phase += this.wobbleSpeed * dt * 2 * Math.PI;
-    const wobble = Math.sin(this.phase) * this.wobbleAmp;
-    // Add a constant upward drift (gravity inverted)
-    this.y += (this.vy + (GRAVITY_DRIFT * 0.02)) * dt * 60; // tuned multiplier for feel
-    this.x += this.vx * dt * 60;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
 
-    // add subtle horizontal wobble
-    this.renderX = this.x + wobble;
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
 
-    // wrap-around vertical: if bubble floats off top, reappear bottom (lava-lamp illusion)
-    if (this.y + this.size < -50) {
-      this.y = height + 10;
-    }
-    // wrap horizontally too
-    if (this.renderX > width + 40) this.x = -40;
-    if (this.renderX < -80) this.x = width + 20;
+                osc.connect(gain);
+                gain.connect(ctx.destination);
 
-    // commit render
-    this.element.style.transform = `translate3d(${Math.round(this.renderX)}px, ${Math.round(this.y)}px, 0)`;
-  }
+                osc.start(now);
+                osc.stop(now + 0.1);
 
-  pop(silent = false) {
-    if (!this.alive) return;
-    this.alive = false;
-    // visual pop
-    this.element.classList.add('popping');
-    // remove after animation completes
-    setTimeout(() => {
-      // hide element then respawn later
-      this.element.style.opacity = '0';
-      this.element.classList.remove('popping');
-    }, POP_DURATION);
-    // return promise-ish via timeout for chaining logic
-    return new Promise(resolve => setTimeout(resolve, POP_DURATION));
-  }
+                const bufferSize = ctx.sampleRate * 0.05;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+                }
 
-  removeDom() {
-    if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element);
-    }
-  }
-}
+                const noise = ctx.createBufferSource();
+                const noiseGain = ctx.createGain();
+                noise.buffer = buffer;
+                noiseGain.gain.setValueAtTime(0.08, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
 
-// ---------- Game Manager ----------
-class BadBubbleGame {
-  constructor() {
-    this.container = document.getElementById('play-area');
-    this.frame = document.getElementById('game-container');  // add this line
+                noise.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                noise.start(now);
+            },
 
-this.scoreEl = document.getElementById('score-display');
-this.overlay = document.getElementById('game-over-screen');
+            playFart() {
+                if (!this.context) return;
 
-this.playBtn = document.getElementById('start-button');
-this.playAgainBtn = document.getElementById('play-again-button');
-this.homeBtn = document.getElementById('home-button');;
+                const ctx = this.context;
+                const now = ctx.currentTime;
 
-    this.sounds = {
-      pop: new Audio(POP_SOUND),
-      fart: new Audio(FART_SOUND)
-    };
-    // reduce volume if needed
-    this.sounds.pop.volume = 0.7;
-    this.sounds.fart.volume = 0.85;
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
 
-    this.bubbles = [];
-    this.state = 'idle'; // idle | playing | gameover
-    this.score = 0;
-    this.best = parseInt(localStorage.getItem('badbubble_best') || '0', 10);
+                osc1.type = 'sawtooth';
+                osc1.frequency.setValueAtTime(80, now);
+                osc1.frequency.exponentialRampToValueAtTime(40, now + 0.3);
 
-    this.lastTime = null;
-    this.rafId = null;
+                gain1.gain.setValueAtTime(0.2, now);
+                gain1.gain.linearRampToValueAtTime(0.1, now + 0.1);
+                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
 
-    // event binding
-    this.onPointerDown = this.onPointerDown.bind(this);
-    this.play = this.play.bind(this);
-    this.playAgain = this.playAgain.bind(this);
+                const mod = ctx.createOscillator();
+                const modGain = ctx.createGain();
+                mod.frequency.setValueAtTime(25, now);
+                modGain.gain.setValueAtTime(30, now);
+                mod.connect(modGain);
+                modGain.connect(osc1.frequency);
 
-    this.attachUI();
-    this.resizeAndInit();
-    window.addEventListener('resize', () => this.resizeAndInit());
-  }
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(400, now);
+                filter.frequency.linearRampToValueAtTime(150, now + 0.3);
 
-  attachUI() {
-    if (this.playBtn) this.playBtn.addEventListener('click', this.play);
-    if (this.playAgainBtn) this.playAgainBtn.addEventListener('click', this.playAgain);
-    if (this.homeBtn) this.homeBtn.addEventListener('click', () => location.reload());
-    // pointerdown delegation on container
-    this.container.addEventListener('pointerdown', this.onPointerDown);
-  }
+                osc1.connect(filter);
+                filter.connect(gain1);
+                gain1.connect(ctx.destination);
 
-  resizeAndInit() {
-    // clear any previous bubbles
-    this.bubbles.forEach(b => b.removeDom());
-    this.bubbles = [];
+                mod.start(now);
+                osc1.start(now);
+                mod.stop(now + 0.35);
+                osc1.stop(now + 0.35);
 
-    // prepare container sizes
-    const rect = this.container.getBoundingClientRect();
-    this.width = rect.width;
-    this.height = rect.height;
-    // make sure CSS variable for bubble size exists (optional)
-    const computedSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--bubble-size') || '72', 10);
-    this.bubbleSize = computedSize || 72;
+                const noiseLength = ctx.sampleRate * 0.3;
+                const noiseBuffer = ctx.createBuffer(1, noiseLength, ctx.sampleRate);
+                const noiseData = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < noiseLength; i++) {
+                    noiseData[i] = (Math.random() * 2 - 1) * Math.sin(i / noiseLength * Math.PI);
+                }
 
-    // populate bubbles
-    for (let i = 0; i < BUBBLE_COUNT; i++) {
-      const b = new Bubble(i, this.container, this.bubbleSize);
-      this.bubbles.push(b);
-    }
-    // start idle visuals
-    this.applyRandomBackground(); // keep this function in your code to set container gradient
-    this.updateScoreUI();
-    this.showOverlay(false);
-  }
+                const noise = ctx.createBufferSource();
+                const noiseGain = ctx.createGain();
+                const noiseFilter = ctx.createBiquadFilter();
 
-  updateScoreUI() {
-    if (this.scoreEl) this.scoreEl.textContent = this.score;
-  }
+                noise.buffer = noiseBuffer;
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.setValueAtTime(200, now);
+                noiseGain.gain.setValueAtTime(0.15, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
 
-  play() {
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                noise.start(now);
+            }
+        };
 
-    document.getElementById('start-screen').style.display = 'none';
-    this.scoreEl.style.display = 'block';
-      
-    // reset state
-    this.state = 'playing';
-    this.score = 0;
-    this.updateScoreUI();
-    this.showOverlay(false);
+        /* ============================================
+           GAME STATE
+           ============================================ */
+        const GameState = {
+            MENU: 'menu',
+            PLAYING: 'playing',
+            CHAIN_REACTION: 'chainReaction',
+            GAME_OVER: 'gameOver'
+        };
 
-    // pick a bad bubble at start and keep it constant
-    this.badId = Math.floor(Math.random() * this.bubbles.length);
+        /* ============================================
+           MAIN GAME OBJECT
+           ============================================ */
+        const Game = {
+            state: GameState.MENU,
+            score: 0,
+            bestScore: 0,
+            bubbles: [],
+            badBubbleId: null,
+            animationId: null,
+            playArea: null,
+            playAreaRect: null,
+            gameContainer: null,
+            respawnTimeouts: [],
 
-    // ensure all bubbles are alive
-    this.bubbles.forEach(b => b.reset(true));
-    // start animation loop
-    this.lastTime = performance.now();
-    if (this.rafId) cancelAnimationFrame(this.rafId);
-    this.rafId = requestAnimationFrame(this.loop.bind(this));
-  }
+            init() {
+                this.playArea = document.getElementById('play-area');
+                this.gameContainer = document.getElementById('game-container');
+                this.scoreDisplay = document.getElementById('score-display');
+                this.startScreen = document.getElementById('start-screen');
+                this.gameOverScreen = document.getElementById('game-over-screen');
+                this.finalScoreEl = document.getElementById('final-score');
+                this.bestScoreEl = document.getElementById('best-score');
 
-  playAgain() {
-    this.play();
-  }
+                this.bestScore = parseInt(localStorage.getItem('badBubbleBest')) || 0;
 
-  loop(timestamp) {
-    const dt = this.lastTime ? (timestamp - this.lastTime) / 1000 : 0.016;
-    this.lastTime = timestamp;
+                this.setRandomBackground();
 
-    // update bubbles
-    for (const b of this.bubbles) {
-     if (b.alive) b.update(dt * 0.10, this.width, this.height);
-    }
+                // Use bound functions to properly handle event listeners
+                document.getElementById('start-button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.startGame();
+                });
+                document.getElementById('play-again-button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.startGame();
+                });
+                document.getElementById('home-button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.goHome();
+                });
 
-    if (this.state === 'playing') {
-      this.rafId = requestAnimationFrame(this.loop.bind(this));
-    }
-  }
+                window.addEventListener('resize', () => this.updatePlayAreaRect());
+            },
 
-  async onPointerDown(e) {
-    // ensure only handle active game
-    if (this.state !== 'playing') return;
-    // find bubble element ancestor
-    let el = e.target;
-    // if click on nested element, climb until .bubble or container
-    while (el && el !== this.container && !el.classList.contains('bubble')) {
-      el = el.parentElement;
-    }
-    if (!el || el === this.container) return;
+            setRandomBackground() {
+                const gradient = GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)];
+                this.gameContainer.style.background = gradient;
+            },
 
-    e.preventDefault();
+            updatePlayAreaRect() {
+                this.playAreaRect = this.playArea.getBoundingClientRect();
+            },
 
-    const id = parseInt(el.dataset.id, 10);
-    const bubble = this.bubbles.find(b => b.id === id);
-    if (!bubble || !bubble.alive) return;
+            // Clean up everything before starting new game
+            cleanup() {
+                // Cancel animation frame
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
 
-    // popped the bad bubble?
-    if (id === this.badId) {
-      // micro pause for anticipation
-      setTimeout(() => this.handleBadBubble(bubble), BAD_PAUSE_MS);
-      return;
-    }
+                // Clear all respawn timeouts
+                this.respawnTimeouts.forEach(timeout => clearTimeout(timeout));
+                this.respawnTimeouts = [];
 
-    // normal bubble
-    // play pop sound
-    try { this.sounds.pop.currentTime = 0; this.sounds.pop.play(); } catch(_) {}
-    this.score += 1;
-    this.updateScoreUI();
-    // visual pop then respawn after delay
-    bubble.pop(true).then(() => {
-      setTimeout(() => {
-        bubble.reset(false);
-      }, RESPAWN_DELAY);
-    });
-  }
+                // Clear bubbles array
+                this.bubbles = [];
 
-  async handleBadBubble(bubble) {
-    if (this.state !== 'playing') return;
-    // play fart sound
-    try { this.sounds.fart.currentTime = 0; this.sounds.fart.play(); } catch(_) {}
+                // Clear play area DOM
+                this.playArea.innerHTML = '';
+            },
 
-    // mark game state so further taps are ignored
-    this.state = 'ending';
+            startGame() {
+                // Full cleanup first
+                this.cleanup();
 
-    // chain pop all remaining alive bubbles (including the one that was popped)
-    // pop the bad bubble first (visual)
-    const aliveBubbles = this.bubbles.filter(b => b.alive);
-    const badIndex = aliveBubbles.findIndex(b => b.id === bubble.id);
-    // ensure bad bubble is popped visually first
-    if (badIndex !== -1) {
-      await aliveBubbles[badIndex].pop(true);
-    }
+                // Initialize audio
+                AudioManager.init();
 
-    // pop the rest in a short stagger so it's clearly visible
-    let idx = 0;
-    for (const b of aliveBubbles) {
-      if (b.id === bubble.id) continue;
-      setTimeout(() => {
-        b.pop(true);
-      }, idx * CHAIN_STAGGER);
-      idx++;
-    }
+                // Reset state
+                this.state = GameState.PLAYING;
+                this.score = 0;
+                this.badBubbleId = null;
 
-    // compute total wait time until the last pop finishes
-    const chainDuration = (idx * CHAIN_STAGGER) + POP_DURATION + 120;
-    setTimeout(() => {
-      this.finishRound();
-    }, chainDuration);
-  }
+                // Update UI
+                this.scoreDisplay.textContent = '0';
+                this.scoreDisplay.style.display = 'block';
+                this.startScreen.style.display = 'none';
+                this.gameOverScreen.classList.remove('visible');
+                this.gameOverScreen.style.display = 'none';
 
-  finishRound() {
-    // update best
-    if (this.score > this.best) {
-      this.best = this.score;
-      localStorage.setItem('badbubble_best', String(this.best));
-    }
-    // show game-over overlay
-    this.state = 'gameover';
-    this.showOverlay(true);
-    // cancel render loop
-    if (this.rafId) cancelAnimationFrame(this.rafId);
-  }
+                // Set new random background
+                this.setRandomBackground();
 
-showOverlay(show) {
-  if (!this.overlay) return;
+                // Get play area dimensions
+                this.updatePlayAreaRect();
 
-  const scoreNode = document.getElementById('final-score');
-  const bestNode = document.getElementById('best-score');
+                // Create initial bubbles with collision-free placement
+                this.createInitialBubbles();
 
-  if (show) {
-    if (scoreNode) scoreNode.textContent = String(this.score);
-    if (bestNode) bestNode.textContent = String(this.best);
-    this.overlay.classList.add('visible');
-  } else {
-    this.overlay.classList.remove('visible');
-  }
-}
+                // Randomly assign one bubble as "bad"
+                this.assignBadBubble();
 
-  // small helper: set a random gradient on container (you already had something like this)
-  applyRandomBackground() {
-    if (typeof setRandomBackground === 'function') {
-      // if you have external setRandomBackground, keep it — call it
-      setRandomBackground();
-      return;
-    }
-    // fallback gradient:
-    const gradients = [
-      'linear-gradient(135deg, #6b4b5a 0%, #2e3a59 100%)',
-      'linear-gradient(135deg, #3b6a73 0%, #1d2b3a 100%)',
-      'linear-gradient(135deg, #6a6b3f 0%, #2d3a2a 100%)',
-      'linear-gradient(135deg, #6b4a3f 0%, #2b2220 100%)',
-      'linear-gradient(135deg, #4f4a7a 0%, #1f2140 100%)'
-    ];
-    const pick = gradients[Math.floor(Math.random() * gradients.length)];
-    this.frame.style.background = pick;
-  }
-}
+                // Start animation loop
+                this.startAnimationLoop();
+            },
 
-// ---------- Boot the game ----------
-window.addEventListener('DOMContentLoaded', () => {
-  // make sure your HTML uses these exact ids:
-  // - "game-container" or "play-area" for the playable div,
-  // - "score" for the top-right score,
-  // - "game-over-overlay" for the overlay section,
-  // - "play-btn", "play-again", "home-btn" for controls,
-  // - "final-score" and "best-score" inside overlay
-  window.BadBubble = new BadBubbleGame();
-});
+            // Create all bubbles with non-overlapping positions
+            createInitialBubbles() {
+                for (let i = 0; i < CONFIG.BUBBLE_COUNT; i++) {
+                    this.createBubble(false, true);
+                }
+            },
+
+            // Find a position that doesn't overlap with existing bubbles
+            findNonOverlappingPosition(size) {
+                const maxX = this.playAreaRect.width - size;
+                const maxY = this.playAreaRect.height - size;
+                const maxAttempts = 50;
+
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    const x = Math.random() * maxX;
+                    const y = Math.random() * maxY;
+                    const radius = size / 2;
+                    const centerX = x + radius;
+                    const centerY = y + radius;
+
+                    let overlapping = false;
+                    for (const other of this.bubbles) {
+                        const otherRadius = other.size / 2;
+                        const otherCenterX = other.x + otherRadius;
+                        const otherCenterY = other.y + otherRadius;
+
+                        const dx = centerX - otherCenterX;
+                        const dy = centerY - otherCenterY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const minDistance = radius + otherRadius + CONFIG.COLLISION_PADDING;
+
+                        if (distance < minDistance) {
+                            overlapping = true;
+                            break;
+                        }
+                    }
+
+                    if (!overlapping) {
+                        return { x, y };
+                    }
+                }
+
+                // Fallback: return random position if no non-overlapping found
+                return { x: Math.random() * maxX, y: Math.random() * maxY };
+            },
+
+            createBubble(delayed = false, initialPlacement = false) {
+                if (this.state !== GameState.PLAYING) return null;
+
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+
+                const id = 'bubble_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                bubble.dataset.id = id;
+
+                const size = CONFIG.BUBBLE_SIZE_MIN + 
+                    Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
+                bubble.style.width = size + 'px';
+                bubble.style.height = size + 'px';
+
+                // Find non-overlapping position
+                const position = this.findNonOverlappingPosition(size);
+                const x = position.x;
+                const y = position.y;
+
+                bubble.style.left = x + 'px';
+                bubble.style.top = y + 'px';
+
+                // Create bubble data object
+                const bubbleData = {
+                    id,
+                    element: bubble,
+                    x,
+                    y,
+                    size,
+                    wobbleOffset: Math.random() * Math.PI * 2,
+                    vx: 0,  // Velocity for collision response
+                    vy: 0
+                };
+
+                // Click/tap handler
+                const handleClick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleBubbleClick(id);
+                };
+
+                bubble.addEventListener('click', handleClick);
+                bubble.addEventListener('touchend', handleClick, { passive: false });
+
+                // Add to DOM
+                if (delayed) {
+                    bubble.style.opacity = '0';
+                    bubble.style.transform = 'scale(0.5)';
+                    this.playArea.appendChild(bubble);
+                    
+                    requestAnimationFrame(() => {
+                        bubble.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        bubble.style.opacity = '1';
+                        bubble.style.transform = 'scale(1)';
+                        // Remove transition after animation to not interfere with movement
+                        setTimeout(() => {
+                            bubble.style.transition = 'transform 0.1s ease-out';
+                        }, 300);
+                    });
+                } else {
+                    this.playArea.appendChild(bubble);
+                }
+
+                this.bubbles.push(bubbleData);
+                return id;
+            },
+
+            assignBadBubble() {
+                if (this.bubbles.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * this.bubbles.length);
+                    this.badBubbleId = this.bubbles[randomIndex].id;
+                }
+            },
+
+            handleBubbleClick(bubbleId) {
+                if (this.state !== GameState.PLAYING) return;
+
+                const bubbleIndex = this.bubbles.findIndex(b => b.id === bubbleId);
+                if (bubbleIndex === -1) return;
+
+                const bubble = this.bubbles[bubbleIndex];
+
+                if (bubbleId === this.badBubbleId) {
+                    this.handleBadBubble(bubble);
+                } else {
+                    this.handleNormalBubble(bubble, bubbleIndex);
+                }
+            },
+
+            handleNormalBubble(bubble, index) {
+                AudioManager.playPop();
+
+                this.score++;
+                this.scoreDisplay.textContent = this.score;
+
+                bubble.element.classList.add('popping');
+
+                // Remove from tracking immediately
+                this.bubbles.splice(index, 1);
+
+                // Remove element after animation
+                setTimeout(() => {
+                    if (bubble.element.parentNode) {
+                        bubble.element.remove();
+                    }
+                }, 250);
+
+                // Respawn after delay
+                const timeout = setTimeout(() => {
+                    if (this.state === GameState.PLAYING) {
+                        const newId = this.createBubble(true);
+                        
+                        // If bad bubble was removed somehow, reassign
+                        if (newId && !this.bubbles.find(b => b.id === this.badBubbleId)) {
+                            this.badBubbleId = newId;
+                        }
+                    }
+                }, CONFIG.RESPAWN_DELAY);
+
+                this.respawnTimeouts.push(timeout);
+            },
+
+            handleBadBubble(bubble) {
+                // Change state to prevent further clicks
+                this.state = GameState.CHAIN_REACTION;
+
+                // Small delay, then fart sound and chain reaction
+                setTimeout(() => {
+                    AudioManager.playFart();
+
+                    // Pop the bad bubble first
+                    bubble.element.classList.add('popping');
+
+                    // Remove bad bubble from array
+                    const badIndex = this.bubbles.findIndex(b => b.id === bubble.id);
+                    if (badIndex !== -1) {
+                        this.bubbles.splice(badIndex, 1);
+                    }
+
+                    // Chain reaction with staggered timing for visibility
+                    const remainingBubbles = [...this.bubbles];
+                    remainingBubbles.forEach((b, i) => {
+                        setTimeout(() => {
+                            b.element.classList.add('chain-pop');
+                        }, 80 + (i * 50)); // Stagger each pop by 50ms
+                    });
+
+                    // Clear the bubbles array
+                    this.bubbles = [];
+
+                    // Calculate total chain reaction time
+                    const chainDuration = 80 + (remainingBubbles.length * 50) + 400;
+
+                    // Show game over after chain reaction completes
+                    setTimeout(() => {
+                        this.showGameOver();
+                    }, chainDuration);
+
+                }, CONFIG.BAD_BUBBLE_DELAY);
+            },
+
+            showGameOver() {
+                this.state = GameState.GAME_OVER;
+
+                // Stop animation
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+
+                // Clear respawn timeouts
+                this.respawnTimeouts.forEach(timeout => clearTimeout(timeout));
+                this.respawnTimeouts = [];
+
+                // Update best score
+                if (this.score > this.bestScore) {
+                    this.bestScore = this.score;
+                    localStorage.setItem('badBubbleBest', this.bestScore);
+                }
+
+                // Update UI
+                this.finalScoreEl.textContent = this.score;
+                this.bestScoreEl.textContent = this.bestScore;
+                this.scoreDisplay.style.display = 'none';
+
+                // Show game over screen
+                this.gameOverScreen.style.display = 'flex';
+                requestAnimationFrame(() => {
+                    this.gameOverScreen.classList.add('visible');
+                });
+            },
+
+            goHome() {
+                this.cleanup();
+                this.state = GameState.MENU;
+
+                // Update UI
+                this.gameOverScreen.classList.remove('visible');
+                this.gameOverScreen.style.display = 'none';
+                this.startScreen.style.display = 'flex';
+
+                this.setRandomBackground();
+            },
+
+            // Handle collision between two bubbles
+            handleCollision(b1, b2) {
+                const r1 = b1.size / 2;
+                const r2 = b2.size / 2;
+                const c1x = b1.x + r1;
+                const c1y = b1.y + r1;
+                const c2x = b2.x + r2;
+                const c2y = b2.y + r2;
+
+                const dx = c2x - c1x;
+                const dy = c2y - c1y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const minDistance = r1 + r2 + CONFIG.COLLISION_PADDING;
+
+                if (distance < minDistance && distance > 0) {
+                    // Normalize direction
+                    const nx = dx / distance;
+                    const ny = dy / distance;
+
+                    // Calculate overlap
+                    const overlap = minDistance - distance;
+
+                    // Push bubbles apart
+                    const push = overlap * CONFIG.PUSH_STRENGTH;
+                    b1.x -= nx * push * 0.5;
+                    b1.y -= ny * push * 0.5;
+                    b2.x += nx * push * 0.5;
+                    b2.y += ny * push * 0.5;
+                }
+            },
+
+            startAnimationLoop() {
+                let lastTime = performance.now();
+
+                const animate = (currentTime) => {
+                    if (this.state !== GameState.PLAYING) return;
+
+                    const deltaTime = Math.min((currentTime - lastTime) / 16, 3); // Cap delta
+                    lastTime = currentTime;
+
+                    const maxX = this.playAreaRect.width;
+                    const maxY = this.playAreaRect.height;
+
+                    // Update each bubble
+                    this.bubbles.forEach(bubble => {
+                        bubble.wobbleOffset += CONFIG.WOBBLE_SPEED * deltaTime;
+
+                        // Float upward with wobble
+                        bubble.y -= CONFIG.FLOAT_SPEED * deltaTime;
+                        bubble.x += Math.sin(bubble.wobbleOffset) * CONFIG.WOBBLE_AMOUNT * deltaTime;
+
+                        // Wrap around vertically
+                        if (bubble.y < -bubble.size) {
+                            bubble.y = maxY;
+                            bubble.x = Math.random() * (maxX - bubble.size);
+                        }
+
+                        // Keep X within bounds
+                        if (bubble.x < 0) bubble.x = 0;
+                        if (bubble.x > maxX - bubble.size) bubble.x = maxX - bubble.size;
+                    });
+
+                    // Handle collisions
+                    for (let i = 0; i < this.bubbles.length; i++) {
+                        for (let j = i + 1; j < this.bubbles.length; j++) {
+                            this.handleCollision(this.bubbles[i], this.bubbles[j]);
+                        }
+                    }
+
+                    // Ensure bubbles stay in bounds after collision
+                    this.bubbles.forEach(bubble => {
+                        if (bubble.x < 0) bubble.x = 0;
+                        if (bubble.x > maxX - bubble.size) bubble.x = maxX - bubble.size;
+                        if (bubble.y > maxY) bubble.y = maxY;
+
+                        // Update DOM
+                        bubble.element.style.left = bubble.x + 'px';
+                        bubble.element.style.top = bubble.y + 'px';
+                    });
+
+                    this.animationId = requestAnimationFrame(animate);
+                };
+
+                this.animationId = requestAnimationFrame(animate);
+            }
+        };
+
+        // Initialize game when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            Game.init();
+        });
     </script>
 </body>
 </html>
