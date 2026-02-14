@@ -73,47 +73,41 @@
         /* ============================================
            BUBBLE STYLES
            ============================================ */
-       /* ---------- Bubble visuals & performance ---------- */
+/* ---------- Bubble visuals & tap target ---------- */
 .bubble {
-   position: absolute;
+  position: absolute;
   width: var(--bubble-size, 72px);
   height: var(--bubble-size, 72px);
   border-radius: 50%;
   pointer-events: auto;
   cursor: pointer;
-  ...
+
+  /* visible airy bubble */
+  background: radial-gradient(circle at 30% 25%,
+    rgba(255,255,255,0.95) 0%,
+    rgba(255,255,255,0.38) 50%,
+    rgba(255,255,255,0.18) 100%
+  );
+
+  outline: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+
+  will-change: transform, opacity;
+  touch-action: none;
+  user-select: none;
 }
 
 /* Invisible larger tap area */
 .bubble::before {
   content: "";
   position: absolute;
-  inset: -14px;   /* expands clickable area */
+  inset: -14px;
+  pointer-events: none; /* IMPORTANT: doesn't block tapping */
 }
 
-  /* airy glossy look with slightly stronger whites for contrast */
-  background: radial-gradient(circle at 30% 30%,
-              rgba(255,255,255,0.95) 0%,
-              rgba(255,255,255,0.38) 45%,
-              rgba(255,255,255,0.18) 100%);
-
-  /* slight outer outline so bubbles read on darker gradients */
-  outline: 1px solid rgba(255,255,255,0.10);
-
-  /* soft glow */
-  box-shadow:
-    0 6px 18px rgba(0,0,0,0.06),
-    inset 0 8px 18px rgba(255,255,255,0.05);
-
-  /* use transform for compositing (much smoother) */
-  will-change: transform, opacity;
-  transition: transform 140ms cubic-bezier(.2,.9,.2,1), opacity 180ms linear;
-  touch-action: none; /* we handle pointer events */
-  user-select: none;
-}
-
-/* popped bubble animation (scales down quickly and fades) */
-.bubble.popping {
+/* Pop animation */
+.bubble.popping,
+.bubble.silent-pop {
   transform: scale(0.4) !important;
   opacity: 0;
 }
