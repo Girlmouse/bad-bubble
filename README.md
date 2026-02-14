@@ -1,4 +1,3 @@
-# bad-bubble
 Bad Bubble
 
 Bad Bubble is a minimalist survival tap game built for web and mobile.
