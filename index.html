@@ -491,7 +491,7 @@ this.homeBtn = document.getElementById('home-button');;
 
     // update bubbles
     for (const b of this.bubbles) {
-     if (b.alive) b.update(dt * 0.20, this.width, this.height);
+     if (b.alive) b.update(dt * 0.10, this.width, this.height);
     }
 
     if (this.state === 'playing') {
