@@ -467,9 +467,10 @@
 
             // Set a random pastel gradient background
             setRandomBackground() {
-                const gradient = GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)];
-                document.body.style.background = gradient;
-            },
+               const gradient = GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)];
+  const container = document.getElementById('game-container');
+  container.style.background = gradient;
+},
 
             // Update play area dimensions
             updatePlayAreaRect() {
