@@ -279,7 +279,7 @@
     </div>
 
     <script>
-     / ---------- Configuration ----------
+     // ---------- Configuration ----------
 const BUBBLE_COUNT = 24;
 const RESPAWN_DELAY = 1500; // ms
 const POP_DURATION = 180; // how long pop animation lasts (ms)
@@ -384,12 +384,15 @@ class Bubble {
 // ---------- Game Manager ----------
 class BadBubbleGame {
   constructor() {
-    this.container = document.getElementById('play-area') || document.getElementById('game-container');
-    this.scoreEl = document.getElementById('score');
-    this.overlay = document.getElementById('game-over-overlay');
-    this.playBtn = document.getElementById('play-btn');
-    this.playAgainBtn = document.getElementById('play-again');
-    this.homeBtn = document.getElementById('home-btn');
+    this.container = document.getElementById('play-area');
+    this.frame = document.getElementById('game-container');  // add this line
+
+this.scoreEl = document.getElementById('score-display');
+this.overlay = document.getElementById('game-over-screen');
+
+this.playBtn = document.getElementById('start-button');
+this.playAgainBtn = document.getElementById('play-again-button');
+this.homeBtn = document.getElementById('home-button');;
 
     this.sounds = {
       pop: new Audio(POP_SOUND),
@@ -454,6 +457,10 @@ class BadBubbleGame {
   }
 
   play() {
+
+    document.getElementById('start-screen').style.display = 'none';
+    this.scoreEl.style.display = 'block';
+      
     // reset state
     this.state = 'playing';
     this.score = 0;
@@ -573,19 +580,20 @@ class BadBubbleGame {
     if (this.rafId) cancelAnimationFrame(this.rafId);
   }
 
-  showOverlay(show) {
-    if (!this.overlay) return;
-    if (show) {
-      // fill overlay with score values (assumes elements exist)
-      const scoreNode = document.getElementById('final-score');
-      const bestNode = document.getElementById('best-score');
-      if (scoreNode) scoreNode.textContent = String(this.score);
-      if (bestNode) bestNode.textContent = String(this.best);
-      this.overlay.style.display = 'flex';
-    } else {
-      this.overlay.style.display = 'none';
-    }
+showOverlay(show) {
+  if (!this.overlay) return;
+
+  const scoreNode = document.getElementById('final-score');
+  const bestNode = document.getElementById('best-score');
+
+  if (show) {
+    if (scoreNode) scoreNode.textContent = String(this.score);
+    if (bestNode) bestNode.textContent = String(this.best);
+    this.overlay.classList.add('visible');
+  } else {
+    this.overlay.classList.remove('visible');
   }
+}
 
   // small helper: set a random gradient on container (you already had something like this)
   applyRandomBackground() {
@@ -603,7 +611,7 @@ class BadBubbleGame {
       'linear-gradient(135deg, #4f4a7a 0%, #1f2140 100%)'
     ];
     const pick = gradients[Math.floor(Math.random() * gradients.length)];
-    this.container.style.background = pick;
+    this.frame.style.background = pick;
   }
 }
 
