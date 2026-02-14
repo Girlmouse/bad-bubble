@@ -129,7 +129,7 @@
 
         /* Chain reaction pop - more visible */
         .bubble.chain-pop {
-            animation: chainPop 0.4s ease-out forwards;
+            animation: chainPop 0.15s ease-out forwards;
             pointer-events: none;
         }
 
@@ -737,7 +737,7 @@
                     remainingBubbles.forEach((b, i) => {
                         setTimeout(() => {
                             b.element.classList.add('chain-pop');
-                        }, 80 + (i * 50)); // Stagger each pop by 50ms
+                        }, 20 + (i * 10)); // Stagger each pop by 50ms
                     });
 
                     // Clear the bubbles array
