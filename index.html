@@ -498,14 +498,12 @@ const AudioManager = {
         // Preload sound effects
         this.sounds.pop      = new Audio('audio/pop.mp3');
         this.sounds.fart     = new Audio('audio/fart.mp3');
-        this.sounds.zap      = new Audio('audio/zap.mp3');
         this.sounds.chainpop = new Audio('audio/chainpop.mp3');
 
         // Set volumes
         this.sounds.pop.volume      = 0.7;
         this.sounds.fart.volume     = 0.9;
-        this.sounds.zap.volume      = 0.85;
-        this.sounds.chainpop.volume = 0.6;
+        this.sounds.chainpop.volume = 0.3;
 
         // Background music — looping, quiet
         this.bgMusic = new Audio('audio/music.mp3');
@@ -541,17 +539,10 @@ const AudioManager = {
         s.play().catch(() => {});
     },
 
-    playZap() {
-        if (!this.sounds.zap) return;
-        const s = this.sounds.zap.cloneNode();
-        s.volume = 0.85;
-        s.play().catch(() => {});
-    },
-
     playChainPop() {
         if (!this.sounds.chainpop) return;
         const s = this.sounds.chainpop.cloneNode();
-        s.volume = 0.6;
+        s.volume = 0.3;
         s.play().catch(() => {});
     }
 };
@@ -1326,7 +1317,6 @@ const Game = {
                 .filter(b => b.id !== bubble.id)
                 .map(b => ({ x: b.x + b.size/2, y: b.y + b.size/2 }));
 
-            AudioManager.playZap();
             LightningRenderer.fire(cx, cy, targets);
 
             // Pop bad bubble
