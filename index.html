@@ -503,12 +503,12 @@ const AudioManager = {
         // Set volumes
         this.sounds.pop.volume      = 0.7;
         this.sounds.fart.volume     = 0.9;
-        this.sounds.chainpop.volume = 0.3;
+        this.sounds.chainpop.volume = 0.15;
 
         // Background music — looping, quiet
         this.bgMusic = new Audio('audio/music.mp3');
         this.bgMusic.loop   = true;
-        this.bgMusic.volume = 0.5;
+        this.bgMusic.volume = 0.25;
 
         this.startMusic();
     },
@@ -542,7 +542,7 @@ const AudioManager = {
     playChainPop() {
         if (!this.sounds.chainpop) return;
         const s = this.sounds.chainpop.cloneNode();
-        s.volume = 0.3;
+        s.volume = 0.15;
         s.play().catch(() => {});
     }
 };
@@ -1026,16 +1026,33 @@ function drawCloudCard(canvas) {
         ctx.fill();
     });
 
-    // Solid bottom fill to close the card
+    // Rounded bottom fill
+    const radius = 22;
     ctx.fillStyle = '#ecdec8';
-    ctx.fillRect(0, fillY, W, H - fillY);
+    ctx.beginPath();
+    ctx.moveTo(0, fillY);
+    ctx.lineTo(0, H - radius);
+    ctx.arcTo(0, H, radius, H, radius);
+    ctx.lineTo(W - radius, H);
+    ctx.arcTo(W, H, W, H - radius, radius);
+    ctx.lineTo(W, fillY);
+    ctx.closePath();
+    ctx.fill();
 
     // Subtle bottom gradient
     const btmGrad = ctx.createLinearGradient(0, fillY, 0, H);
     btmGrad.addColorStop(0, 'rgba(240,224,200,0)');
     btmGrad.addColorStop(1, 'rgba(210,190,160,0.4)');
     ctx.fillStyle = btmGrad;
-    ctx.fillRect(0, fillY, W, H - fillY);
+    ctx.beginPath();
+    ctx.moveTo(0, fillY);
+    ctx.lineTo(0, H - radius);
+    ctx.arcTo(0, H, radius, H, radius);
+    ctx.lineTo(W - radius, H);
+    ctx.arcTo(W, H, W, H - radius, radius);
+    ctx.lineTo(W, fillY);
+    ctx.closePath();
+    ctx.fill();
 }
 
 /* ============================================
@@ -1337,7 +1354,7 @@ const Game = {
             });
 
             this.bubbles = [];
-            const totalTime = 80 + remaining.length * 60 + 600;
+            const totalTime = 80 + remaining.length * 60 + 400 + 2000;
             setTimeout(() => this.showGameOver(), totalTime);
 
         }, CONFIG.BAD_BUBBLE_DELAY);
