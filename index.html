@@ -4,159 +4,270 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Bad Bubble</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ============================================
-           RESET & BASE STYLES
-           ============================================ */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             overflow: hidden;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
-            /* Constant warm beige background for browser window */
-            background: #f5f5dc;
+            background: #0a0a14;
+            font-family: 'Nunito', sans-serif;
         }
 
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         /* ============================================
-           GAME CONTAINER - Portrait frame
-           ============================================ */
+           GAME CONTAINER
+        ============================================ */
         #game-container {
             position: relative;
-            width: min(90vw, 400px);
-            height: min(85vh, 700px);
-            border: 3px solid rgba(255, 255, 255, 0.25);
-            border-radius: 24px;
+            width: min(92vw, 420px);
+            height: min(92vh, 740px);
+            border-radius: 28px;
             overflow: hidden;
-            transition: background 0.5s ease;
+            background: #0e1828;
+            box-shadow: 0 0 60px rgba(0,0,0,0.8);
         }
 
         /* ============================================
-           SCORE DISPLAY
-           ============================================ */
+           SCORE
+        ============================================ */
         #score-display {
             position: absolute;
-            top: 16px;
-            right: 20px;
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.85);
+            top: 18px;
+            right: 22px;
+            width: 44px;
+            height: 44px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.2rem;
+            color: #fff;
             z-index: 10;
-            letter-spacing: 0.5px;
+            border: 2px solid rgba(255,255,255,0.15);
         }
 
         /* ============================================
-           PLAY AREA - Where bubbles float
-           ============================================ */
+           PLAY AREA
+        ============================================ */
         #play-area {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
         }
 
         /* ============================================
-           BUBBLE STYLES - Soapy finish
-           ============================================ */
+           CANVAS for bottle + cloud
+        ============================================ */
+        #scene-canvas {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%; height: 32%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        #lightning-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* ============================================
+           BUBBLES
+        ============================================ */
         .bubble {
             position: absolute;
             border-radius: 50%;
             cursor: pointer;
-            /* Soapy iridescent look with multiple highlight layers */
-            background: 
-                radial-gradient(
-                    ellipse 40% 40% at 25% 20%,
-                    rgba(255, 255, 255, 0.95) 0%,
-                    rgba(255, 255, 255, 0.4) 30%,
-                    transparent 70%
-                ),
-                radial-gradient(
-                    ellipse 30% 20% at 70% 75%,
-                    rgba(255, 255, 255, 0.5) 0%,
-                    transparent 60%
-                ),
-                radial-gradient(
-                    ellipse 100% 100% at 50% 50%,
-                    rgba(255, 255, 255, 0.08) 0%,
-                    rgba(255, 255, 255, 0.15) 40%,
-                    rgba(255, 255, 255, 0.05) 60%,
-                    rgba(255, 255, 255, 0.2) 100%
-                );
-            /* Soapy border and glow */
-            border: 1.5px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 
-                0 0 20px rgba(255, 255, 255, 0.15),
-                0 0 40px rgba(255, 255, 255, 0.08),
-                inset 0 0 20px rgba(255, 255, 255, 0.1),
-                inset -2px -2px 10px rgba(255, 255, 255, 0.15);
+            z-index: 5;
             will-change: transform, left, top;
             transition: transform 0.1s ease-out;
         }
 
-        .bubble:hover {
-            transform: scale(1.05);
-        }
+        .bubble:hover { transform: scale(1.08); }
+        .bubble:active { transform: scale(0.93); }
 
-        .bubble:active {
-            transform: scale(0.95);
-        }
-
-        /* Pop animation */
         .bubble.popping {
-            animation: popBubble 0.25s ease-out forwards;
+            animation: popBubble 0.3s ease-out forwards;
             pointer-events: none;
         }
 
         @keyframes popBubble {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.4); opacity: 0.6; }
+            40% { transform: scale(1.5); opacity: 0.7; }
             100% { transform: scale(0); opacity: 0; }
         }
 
-        /* Chain reaction pop - more visible */
         .bubble.chain-pop {
-            animation: chainPop 0.15s ease-out forwards;
+            animation: chainPop 0.2s ease-out forwards;
             pointer-events: none;
         }
 
         @keyframes chainPop {
             0% { transform: scale(1); opacity: 1; }
-            30% { transform: scale(1.2); opacity: 0.8; }
+            30% { transform: scale(1.3); opacity: 0.8; }
             100% { transform: scale(0); opacity: 0; }
         }
 
         /* ============================================
+           SPLAT PARTICLES
+        ============================================ */
+        .splat-particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 6;
+            animation: splatFly var(--duration) ease-out forwards;
+        }
+
+        @keyframes splatFly {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0.2); opacity: 0; }
+        }
+
+        /* ============================================
+           MAIN / START SCREEN
+        ============================================ */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 60px;
+            z-index: 100;
+            background: #0e1828;
+        }
+
+        #start-screen canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        .start-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding: 0 24px;
+        }
+
+        .game-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 3rem;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255,255,255,0.3);
+        }
+
+        .game-tagline {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.65);
+            margin-bottom: 44px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .pick-label {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 30px;
+        }
+
+        .color-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .color-circle {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.08);
+        }
+
+        .color-circle.is-dark {
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .color-option:hover .color-circle {
+            transform: scale(1.12);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .color-option:active .color-circle {
+            transform: scale(0.95);
+        }
+
+        .color-name {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .luna-credit {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            position: absolute;
+            bottom: 20px;
+        }
+
+        /* ============================================
            GAME OVER SCREEN
-           ============================================ */
+        ============================================ */
         #game-over-screen {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             display: none;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(8px);
+            padding-top: 60px;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(10px);
             z-index: 100;
             opacity: 0;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.5s ease;
         }
 
         #game-over-screen.visible {
@@ -164,730 +275,1197 @@
             opacity: 1;
         }
 
-        #game-over-screen h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.95);
-            margin-bottom: 24px;
-            text-align: center;
-            letter-spacing: 1px;
+        .cloud-card {
+            position: relative;
+            width: 290px;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 44px 28px 32px;
+            margin-bottom: 28px;
         }
 
-        #game-over-screen .scores {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 32px;
+        .cloud-card canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        .cloud-card-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .game-over-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            color: #3a2a1a;
             text-align: center;
-            line-height: 1.8;
+            line-height: 1.25;
+            margin-bottom: 20px;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.4);
+        }
+
+        .score-row {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 4px;
+            align-items: flex-end;
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .score-label {
+            font-size: 0.65rem;
+            color: #8a7060;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 2px;
+            font-weight: 700;
+        }
+
+        .score-value {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.4rem;
+            color: #2a1a0a;
+            line-height: 1;
+        }
+
+        .score-item.best .score-value {
+            font-size: 1.8rem;
+            color: #5a3a20;
         }
 
         .button-group {
             display: flex;
             flex-direction: column;
             gap: 12px;
+            align-items: center;
         }
 
         .game-button {
-            padding: 14px 40px;
-            font-size: 1rem;
-            font-weight: 500;
+            padding: 13px 44px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
             border: none;
             border-radius: 30px;
             cursor: pointer;
             transition: all 0.2s ease;
             letter-spacing: 0.5px;
+            min-width: 180px;
         }
 
         .game-button.primary {
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
+            background: rgba(255,255,255,0.92);
+            color: #222;
         }
 
         .game-button.secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.9);
+            border: 1.5px solid rgba(255,255,255,0.3);
         }
 
-        .game-button:hover {
-            transform: scale(1.03);
-        }
+        .game-button:hover { transform: scale(1.04); }
+        .game-button:active { transform: scale(0.96); }
 
-        .game-button:active {
-            transform: scale(0.97);
-        }
-
-        /* ============================================
-           START SCREEN
-           ============================================ */
-        #start-screen {
+        /* EXIT button */
+        #exit-button {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.3);
-            z-index: 100;
+            bottom: 24px;
+            left: 20px;
+            background: rgba(0,0,0,0.5);
+            color: rgba(255,255,255,0.7);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
         }
-
-        #start-screen h1 {
-            font-size: 2rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.95);
-            margin-bottom: 12px;
-            letter-spacing: 2px;
-        }
-
-        #start-screen .tagline {
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 40px;
-        }
+        #exit-button:hover { background: rgba(0,0,0,0.7); color: #fff; }
     </style>
 </head>
 <body>
-    <!-- Main game container (portrait frame) -->
-    <div id="game-container">
-        <!-- Score display (visible during gameplay) -->
-        <div id="score-display" style="display: none;">0</div>
+<div id="game-container">
+    <div id="score-display">0</div>
+    <div id="play-area"></div>
+    <canvas id="scene-canvas"></canvas>
+    <canvas id="lightning-canvas"></canvas>
+    <button id="exit-button">EXIT</button>
 
-        <!-- Play area where bubbles float -->
-        <div id="play-area"></div>
-
-        <!-- Start screen -->
-        <div id="start-screen">
-            <h1>Bad Bubble</h1>
-            <p class="tagline">Find the bad one</p>
-            <button class="game-button primary" id="start-button">Play</button>
+    <!-- START SCREEN -->
+    <div id="start-screen">
+        <canvas id="menu-bubbles-canvas"></canvas>
+        <div class="start-content">
+            <h1 class="game-title">Bad Bubble</h1>
+            <p class="game-tagline">There's a bad bubble hiding away,<br>can you find it?</p>
+            <p class="pick-label">Pick a color</p>
+            <div class="color-grid" id="color-grid"></div>
         </div>
-
-        <!-- Game over screen -->
-        <div id="game-over-screen">
-            <h2>Bad Bubble Located</h2>
-            <div class="scores">
-                <div>Score: <span id="final-score">0</span></div>
-                <div>Best: <span id="best-score">0</span></div>
-            </div>
-            <div class="button-group">
-                <button class="game-button primary" id="play-again-button">Play Again</button>
-                <button class="game-button secondary" id="home-button">Home</button>
-            </div>
-        </div>
+        <span class="luna-credit">@lunabellegames</span>
     </div>
 
-    <script>
-        /* ============================================
-           GAME CONFIGURATION
-           ============================================ */
-        const CONFIG = {
-            BUBBLE_COUNT: 16,
-            BUBBLE_SIZE_MIN: 38,
-            BUBBLE_SIZE_MAX: 54,
-            RESPAWN_DELAY: 1500,
-            BAD_BUBBLE_DELAY: 200,
-            FLOAT_SPEED: 0.25,
-            WOBBLE_AMOUNT: 0.6,
-            WOBBLE_SPEED: 0.015,
-            COLLISION_PADDING: 8,       // Extra space between bubbles
-            PUSH_STRENGTH: 0.5          // How strongly bubbles push apart
-        };
+    <!-- GAME OVER SCREEN -->
+    <div id="game-over-screen">
+        <div class="cloud-card">
+            <canvas id="cloud-canvas" width="290" height="220"></canvas>
+            <div class="cloud-card-content">
+                <div class="game-over-title">Bad Bubble<br>Located</div>
+                <div class="score-row">
+                    <div class="score-item">
+                        <span class="score-label">Score</span>
+                        <span class="score-value" id="final-score">0</span>
+                    </div>
+                    <div class="score-item best">
+                        <span class="score-label">Best</span>
+                        <span class="score-value" id="best-score">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="button-group">
+            <button class="game-button primary" id="play-again-button">Play Again</button>
+            <button class="game-button secondary" id="home-button">Home</button>
+        </div>
+    </div>
+</div>
 
-        /* ============================================
-           DARK GRADIENT BACKGROUNDS
-           ============================================ */
-        const GRADIENTS = [
-            'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',  // Deep blue
-            'linear-gradient(135deg, #2d132c 0%, #4a1942 50%, #801336 100%)',  // Deep magenta
-            'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%)',  // Navy
-            'linear-gradient(135deg, #1a1423 0%, #2d1f3d 50%, #4a3158 100%)',  // Deep purple
-            'linear-gradient(135deg, #0b3d2e 0%, #145a44 50%, #1d7a5c 100%)',  // Forest green
-            'linear-gradient(135deg, #1c1c1c 0%, #2d2d44 50%, #3d3d5c 100%)',  // Charcoal purple
-            'linear-gradient(135deg, #2c1810 0%, #4a2c1a 50%, #6b4423 100%)',  // Deep bronze
-            'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',  // Deep teal
-            'linear-gradient(135deg, #1f1013 0%, #3d1f25 50%, #5c2e38 100%)',  // Deep rose
-            'linear-gradient(135deg, #1a1a0f 0%, #2d2d1a 50%, #4a4a2a 100%)'   // Deep olive
+<script>
+/* ============================================
+   COLOR SCENES
+============================================ */
+const SCENES = [
+    { id: 'yellow',  name: 'Yellow',  color: '#fcd831', dark: '#b89a00' },
+    { id: 'red',     name: 'Red',     color: '#f60000', dark: '#8a0000' },
+    { id: 'purple',  name: 'Purple',  color: '#cb6ce6', dark: '#7a2a96' },
+    { id: 'green',   name: 'Green',   color: '#7ed957', dark: '#3a8a1a' },
+    { id: 'violet',  name: 'Violet',  color: '#5e17eb', dark: '#2d0090' },
+    { id: 'cyan',    name: 'Cyan',    color: '#0cc0df', dark: '#006a80' },
+    { id: 'orange',  name: 'Orange',  color: '#f35329', dark: '#8a2000' },
+    { id: 'black',   name: 'Black',   color: '#2a2a2a', dark: '#0a0a0a' },
+];
+
+const BG_COLOR = '#0e1828';
+
+/* ============================================
+   CONFIG
+============================================ */
+const CONFIG = {
+    BUBBLE_COUNT: 10,
+    BUBBLE_SIZE_MIN: 38,
+    BUBBLE_SIZE_MAX: 56,
+    RESPAWN_DELAY: 2000,
+    BAD_BUBBLE_DELAY: 150,
+    FLOAT_SPEED: 0.22,
+    WOBBLE_AMOUNT: 0.55,
+    WOBBLE_SPEED: 0.013,
+    COLLISION_PADDING: 6,
+    PUSH_STRENGTH: 0.5
+};
+
+/* ============================================
+   AUDIO
+============================================ */
+const AudioManager = {
+    context: null,
+    init() {
+        if (!this.context) this.context = new (window.AudioContext || window.webkitAudioContext)();
+        if (this.context.state === 'suspended') this.context.resume();
+    },
+    playPop() {
+        if (!this.context) return;
+        const ctx = this.context, now = ctx.currentTime;
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(700, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
+        gain.gain.setValueAtTime(0.13, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.12);
+    },
+    playFart() {
+        if (!this.context) return;
+        const ctx = this.context, now = ctx.currentTime;
+        const osc1 = ctx.createOscillator(), gain1 = ctx.createGain();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(80, now);
+        osc1.frequency.exponentialRampToValueAtTime(38, now + 0.35);
+        gain1.gain.setValueAtTime(0.22, now);
+        gain1.gain.linearRampToValueAtTime(0.1, now + 0.15);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        const mod = ctx.createOscillator(), modGain = ctx.createGain();
+        mod.frequency.setValueAtTime(22, now); modGain.gain.setValueAtTime(28, now);
+        mod.connect(modGain); modGain.connect(osc1.frequency);
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass'; filter.frequency.setValueAtTime(380, now);
+        filter.frequency.linearRampToValueAtTime(120, now + 0.35);
+        osc1.connect(filter); filter.connect(gain1); gain1.connect(ctx.destination);
+        mod.start(now); osc1.start(now); mod.stop(now + 0.4); osc1.stop(now + 0.4);
+    },
+    playZap() {
+        if (!this.context) return;
+        const ctx = this.context, now = ctx.currentTime;
+        const bufferSize = ctx.sampleRate * 0.3;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.15));
+        const noise = ctx.createBufferSource(), gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass'; filter.frequency.value = 1200; filter.Q.value = 0.5;
+        noise.buffer = buffer;
+        gain.gain.setValueAtTime(0.4, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+        noise.start(now);
+    },
+    playChainPop(delay) {
+        if (!this.context) return;
+        const ctx = this.context, now = ctx.currentTime + delay;
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400 + Math.random() * 200, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.08);
+        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.08);
+    }
+};
+
+/* ============================================
+   SCENE RENDERER (bottle + cloud)
+============================================ */
+const SceneRenderer = {
+    canvas: null,
+    ctx: null,
+    color: '#fcd831',
+    darkColor: '#b89a00',
+    animFrame: null,
+    time: 0,
+    liquidDrops: [],
+
+    init(canvas, color, darkColor) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.color = color;
+        this.darkColor = darkColor;
+        this.time = 0;
+        this.liquidDrops = [];
+        this.resize();
+        this.startAnimation();
+    },
+
+    resize() {
+        if (!this.canvas) return;
+        const parent = this.canvas.parentElement;
+        this.canvas.width = parent.clientWidth;
+        this.canvas.height = parent.clientHeight * 0.32;
+    },
+
+    stop() {
+        if (this.animFrame) cancelAnimationFrame(this.animFrame);
+        this.animFrame = null;
+    },
+
+    startAnimation() {
+        this.stop();
+        const animate = () => {
+            this.time += 0.016;
+            this.draw();
+            this.animFrame = requestAnimationFrame(animate);
+        };
+        this.animFrame = requestAnimationFrame(animate);
+    },
+
+    draw() {
+        const { ctx, canvas, color, darkColor, time } = this;
+        if (!ctx) return;
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        this.drawCloud(W, H, color, darkColor, time);
+    },
+
+    drawCloud(W, H, color, darkColor, time) {
+        const ctx = this.ctx;
+        const baseY = H * 0.52;
+
+        // === THICK LIQUID BASE — lava pool ===
+        const lavaGrad = ctx.createLinearGradient(0, baseY + 15, 0, H);
+        lavaGrad.addColorStop(0, hexToRgba(color, 1.0));
+        lavaGrad.addColorStop(0.2, hexToRgba(color, 0.88));
+        lavaGrad.addColorStop(0.5, hexToRgba(darkColor, 0.95));
+        lavaGrad.addColorStop(1, hexToRgba(darkColor, 1.0));
+
+        // Undulating lava surface
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        ctx.lineTo(0, baseY + 20);
+        for (let x = 0; x <= W; x += 6) {
+            const w1 = Math.sin(x * 0.022 + time * 0.45) * 7;
+            const w2 = Math.sin(x * 0.038 + time * 0.28 + 1.5) * 4;
+            ctx.lineTo(x, baseY + 20 + w1 + w2);
+        }
+        ctx.lineTo(W, H);
+        ctx.closePath();
+        ctx.fillStyle = lavaGrad;
+        ctx.fill();
+
+        // Sheen on lava surface
+        ctx.beginPath();
+        ctx.moveTo(0, baseY + 20);
+        for (let x = 0; x <= W; x += 6) {
+            const w1 = Math.sin(x * 0.022 + time * 0.45) * 7;
+            const w2 = Math.sin(x * 0.038 + time * 0.28 + 1.5) * 4;
+            ctx.lineTo(x, baseY + 20 + w1 + w2);
+        }
+        ctx.lineTo(W, baseY + 36);
+        ctx.lineTo(0, baseY + 36);
+        ctx.closePath();
+        ctx.fillStyle = hexToRgba(color, 0.25);
+        ctx.fill();
+
+
+
+                // Small bubbles drifting up from the lava
+        const riseSpots = [
+            { x: W*0.08, speed: 0.28, offset: 0.0, size: 5  },
+            { x: W*0.22, speed: 0.32, offset: 1.8, size: 8  },
+            { x: W*0.38, speed: 0.25, offset: 3.2, size: 6  },
+            { x: W*0.52, speed: 0.30, offset: 0.9, size: 9  },
+            { x: W*0.66, speed: 0.27, offset: 2.5, size: 5  },
+            { x: W*0.80, speed: 0.33, offset: 1.4, size: 7  },
+            { x: W*0.92, speed: 0.26, offset: 3.8, size: 6  },
         ];
 
-        /* ============================================
-           AUDIO GENERATION (Web Audio API)
-           ============================================ */
-        const AudioManager = {
-            context: null,
-
-            init() {
-                if (!this.context) {
-                    this.context = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (this.context.state === 'suspended') {
-                    this.context.resume();
-                }
-            },
-
-            playPop() {
-                if (!this.context) return;
-                
-                const ctx = this.context;
-                const now = ctx.currentTime;
-
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(800, now);
-                osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
-
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                osc.start(now);
-                osc.stop(now + 0.1);
-
-                const bufferSize = ctx.sampleRate * 0.05;
-                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-                }
-
-                const noise = ctx.createBufferSource();
-                const noiseGain = ctx.createGain();
-                noise.buffer = buffer;
-                noiseGain.gain.setValueAtTime(0.08, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-
-                noise.connect(noiseGain);
-                noiseGain.connect(ctx.destination);
-                noise.start(now);
-            },
-
-            playFart() {
-                if (!this.context) return;
-
-                const ctx = this.context;
-                const now = ctx.currentTime;
-
-                const osc1 = ctx.createOscillator();
-                const gain1 = ctx.createGain();
-
-                osc1.type = 'sawtooth';
-                osc1.frequency.setValueAtTime(80, now);
-                osc1.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-
-                gain1.gain.setValueAtTime(0.2, now);
-                gain1.gain.linearRampToValueAtTime(0.1, now + 0.1);
-                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-
-                const mod = ctx.createOscillator();
-                const modGain = ctx.createGain();
-                mod.frequency.setValueAtTime(25, now);
-                modGain.gain.setValueAtTime(30, now);
-                mod.connect(modGain);
-                modGain.connect(osc1.frequency);
-
-                const filter = ctx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(400, now);
-                filter.frequency.linearRampToValueAtTime(150, now + 0.3);
-
-                osc1.connect(filter);
-                filter.connect(gain1);
-                gain1.connect(ctx.destination);
-
-                mod.start(now);
-                osc1.start(now);
-                mod.stop(now + 0.35);
-                osc1.stop(now + 0.35);
-
-                const noiseLength = ctx.sampleRate * 0.3;
-                const noiseBuffer = ctx.createBuffer(1, noiseLength, ctx.sampleRate);
-                const noiseData = noiseBuffer.getChannelData(0);
-                for (let i = 0; i < noiseLength; i++) {
-                    noiseData[i] = (Math.random() * 2 - 1) * Math.sin(i / noiseLength * Math.PI);
-                }
-
-                const noise = ctx.createBufferSource();
-                const noiseGain = ctx.createGain();
-                const noiseFilter = ctx.createBiquadFilter();
-
-                noise.buffer = noiseBuffer;
-                noiseFilter.type = 'bandpass';
-                noiseFilter.frequency.setValueAtTime(200, now);
-                noiseGain.gain.setValueAtTime(0.15, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-
-                noise.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-                noiseGain.connect(ctx.destination);
-                noise.start(now);
-            }
-        };
-
-        /* ============================================
-           GAME STATE
-           ============================================ */
-        const GameState = {
-            MENU: 'menu',
-            PLAYING: 'playing',
-            CHAIN_REACTION: 'chainReaction',
-            GAME_OVER: 'gameOver'
-        };
-
-        /* ============================================
-           MAIN GAME OBJECT
-           ============================================ */
-        const Game = {
-            state: GameState.MENU,
-            score: 0,
-            bestScore: 0,
-            bubbles: [],
-            badBubbleId: null,
-            animationId: null,
-            playArea: null,
-            playAreaRect: null,
-            gameContainer: null,
-            respawnTimeouts: [],
-
-            init() {
-                this.playArea = document.getElementById('play-area');
-                this.gameContainer = document.getElementById('game-container');
-                this.scoreDisplay = document.getElementById('score-display');
-                this.startScreen = document.getElementById('start-screen');
-                this.gameOverScreen = document.getElementById('game-over-screen');
-                this.finalScoreEl = document.getElementById('final-score');
-                this.bestScoreEl = document.getElementById('best-score');
-
-                this.bestScore = parseInt(localStorage.getItem('badBubbleBest')) || 0;
-
-                this.setRandomBackground();
-
-                // Use bound functions to properly handle event listeners
-                document.getElementById('start-button').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.startGame();
-                });
-                document.getElementById('play-again-button').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.startGame();
-                });
-                document.getElementById('home-button').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.goHome();
-                });
-
-                window.addEventListener('resize', () => this.updatePlayAreaRect());
-            },
-
-            setRandomBackground() {
-                const gradient = GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)];
-                this.gameContainer.style.background = gradient;
-            },
-
-            updatePlayAreaRect() {
-                this.playAreaRect = this.playArea.getBoundingClientRect();
-            },
-
-            // Clean up everything before starting new game
-            cleanup() {
-                // Cancel animation frame
-                if (this.animationId) {
-                    cancelAnimationFrame(this.animationId);
-                    this.animationId = null;
-                }
-
-                // Clear all respawn timeouts
-                this.respawnTimeouts.forEach(timeout => clearTimeout(timeout));
-                this.respawnTimeouts = [];
-
-                // Clear bubbles array
-                this.bubbles = [];
-
-                // Clear play area DOM
-                this.playArea.innerHTML = '';
-            },
-
-            startGame() {
-                // Full cleanup first
-                this.cleanup();
-
-                // Initialize audio
-                AudioManager.init();
-
-                // Reset state
-                this.state = GameState.PLAYING;
-                this.score = 0;
-                this.badBubbleId = null;
-
-                // Update UI
-                this.scoreDisplay.textContent = '0';
-                this.scoreDisplay.style.display = 'block';
-                this.startScreen.style.display = 'none';
-                this.gameOverScreen.classList.remove('visible');
-                this.gameOverScreen.style.display = 'none';
-
-                // Set new random background
-                this.setRandomBackground();
-
-                // Get play area dimensions
-                this.updatePlayAreaRect();
-
-                // Create initial bubbles with collision-free placement
-                this.createInitialBubbles();
-
-                // Randomly assign one bubble as "bad"
-                this.assignBadBubble();
-
-                // Start animation loop
-                this.startAnimationLoop();
-            },
-
-            // Create all bubbles with non-overlapping positions
-            createInitialBubbles() {
-                for (let i = 0; i < CONFIG.BUBBLE_COUNT; i++) {
-                    this.createBubble(false, true);
-                }
-            },
-
-            // Find a position that doesn't overlap with existing bubbles
-            findNonOverlappingPosition(size) {
-                const maxX = this.playAreaRect.width - size;
-                const maxY = this.playAreaRect.height - size;
-                const maxAttempts = 50;
-
-                for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                    const x = Math.random() * maxX;
-                    const y = Math.random() * maxY;
-                    const radius = size / 2;
-                    const centerX = x + radius;
-                    const centerY = y + radius;
-
-                    let overlapping = false;
-                    for (const other of this.bubbles) {
-                        const otherRadius = other.size / 2;
-                        const otherCenterX = other.x + otherRadius;
-                        const otherCenterY = other.y + otherRadius;
-
-                        const dx = centerX - otherCenterX;
-                        const dy = centerY - otherCenterY;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        const minDistance = radius + otherRadius + CONFIG.COLLISION_PADDING;
-
-                        if (distance < minDistance) {
-                            overlapping = true;
-                            break;
-                        }
-                    }
-
-                    if (!overlapping) {
-                        return { x, y };
-                    }
-                }
-
-                // Fallback: return random position if no non-overlapping found
-                return { x: Math.random() * maxX, y: Math.random() * maxY };
-            },
-
-            createBubble(delayed = false, initialPlacement = false) {
-                if (this.state !== GameState.PLAYING) return null;
-
-                const bubble = document.createElement('div');
-                bubble.className = 'bubble';
-
-                const id = 'bubble_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                bubble.dataset.id = id;
-
-                const size = CONFIG.BUBBLE_SIZE_MIN + 
-                    Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
-                bubble.style.width = size + 'px';
-                bubble.style.height = size + 'px';
-
-                // Find non-overlapping position
-                const position = this.findNonOverlappingPosition(size);
-                const x = position.x;
-                const y = position.y;
-
-                bubble.style.left = x + 'px';
-                bubble.style.top = y + 'px';
-
-                // Create bubble data object
-                const bubbleData = {
-                    id,
-                    element: bubble,
-                    x,
-                    y,
-                    size,
-                    wobbleOffset: Math.random() * Math.PI * 2,
-                    vx: 0,  // Velocity for collision response
-                    vy: 0
-                };
-
-                // Click/tap handler
-                const handleClick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.handleBubbleClick(id);
-                };
-
-                bubble.addEventListener('click', handleClick);
-                bubble.addEventListener('touchend', handleClick, { passive: false });
-
-                // Add to DOM
-                if (delayed) {
-                    bubble.style.opacity = '0';
-                    bubble.style.transform = 'scale(0.5)';
-                    this.playArea.appendChild(bubble);
-                    
-                    requestAnimationFrame(() => {
-                        bubble.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                        bubble.style.opacity = '1';
-                        bubble.style.transform = 'scale(1)';
-                        // Remove transition after animation to not interfere with movement
-                        setTimeout(() => {
-                            bubble.style.transition = 'transform 0.1s ease-out';
-                        }, 300);
-                    });
-                } else {
-                    this.playArea.appendChild(bubble);
-                }
-
-                this.bubbles.push(bubbleData);
-                return id;
-            },
-
-            assignBadBubble() {
-                if (this.bubbles.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * this.bubbles.length);
-                    this.badBubbleId = this.bubbles[randomIndex].id;
-                }
-            },
-
-            handleBubbleClick(bubbleId) {
-                if (this.state !== GameState.PLAYING) return;
-
-                const bubbleIndex = this.bubbles.findIndex(b => b.id === bubbleId);
-                if (bubbleIndex === -1) return;
-
-                const bubble = this.bubbles[bubbleIndex];
-
-                if (bubbleId === this.badBubbleId) {
-                    this.handleBadBubble(bubble);
-                } else {
-                    this.handleNormalBubble(bubble, bubbleIndex);
-                }
-            },
-
-            handleNormalBubble(bubble, index) {
-                AudioManager.playPop();
-
-                this.score++;
-                this.scoreDisplay.textContent = this.score;
-
-                bubble.element.classList.add('popping');
-
-                // Remove from tracking immediately
-                this.bubbles.splice(index, 1);
-
-                // Remove element after animation
-                setTimeout(() => {
-                    if (bubble.element.parentNode) {
-                        bubble.element.remove();
-                    }
-                }, 250);
-
-                // Respawn after delay
-                const timeout = setTimeout(() => {
-                    if (this.state === GameState.PLAYING) {
-                        const newId = this.createBubble(true);
-                        
-                        // If bad bubble was removed somehow, reassign
-                        if (newId && !this.bubbles.find(b => b.id === this.badBubbleId)) {
-                            this.badBubbleId = newId;
-                        }
-                    }
-                }, CONFIG.RESPAWN_DELAY);
-
-                this.respawnTimeouts.push(timeout);
-            },
-
-            handleBadBubble(bubble) {
-                // Change state to prevent further clicks
-                this.state = GameState.CHAIN_REACTION;
-
-                // Small delay, then fart sound and chain reaction
-                setTimeout(() => {
-                    AudioManager.playFart();
-
-                    // Pop the bad bubble first
-                    bubble.element.classList.add('popping');
-
-                    // Remove bad bubble from array
-                    const badIndex = this.bubbles.findIndex(b => b.id === bubble.id);
-                    if (badIndex !== -1) {
-                        this.bubbles.splice(badIndex, 1);
-                    }
-
-                    // Chain reaction with staggered timing for visibility
-                    const remainingBubbles = [...this.bubbles];
-                    remainingBubbles.forEach((b, i) => {
-                        setTimeout(() => {
-                            b.element.classList.add('chain-pop');
-                        }, 10 + (i * 6)); // Stagger each pop by 50ms
-                    });
-
-                    // Clear the bubbles array
-                    this.bubbles = [];
-
-                    // Calculate total chain reaction time
-                    const chainDuration = 80 + (remainingBubbles.length * 50) + 400;
-
-                    // Show game over after chain reaction completes
-                    setTimeout(() => {
-                        this.showGameOver();
-                    }, chainDuration);
-
-                }, CONFIG.BAD_BUBBLE_DELAY);
-            },
-
-            showGameOver() {
-                this.state = GameState.GAME_OVER;
-
-                // Stop animation
-                if (this.animationId) {
-                    cancelAnimationFrame(this.animationId);
-                    this.animationId = null;
-                }
-
-                // Clear respawn timeouts
-                this.respawnTimeouts.forEach(timeout => clearTimeout(timeout));
-                this.respawnTimeouts = [];
-
-                // Update best score
-                if (this.score > this.bestScore) {
-                    this.bestScore = this.score;
-                    localStorage.setItem('badBubbleBest', this.bestScore);
-                }
-
-                // Update UI
-                this.finalScoreEl.textContent = this.score;
-                this.bestScoreEl.textContent = this.bestScore;
-                this.scoreDisplay.style.display = 'none';
-
-                // Show game over screen
-                this.gameOverScreen.style.display = 'flex';
-                requestAnimationFrame(() => {
-                    this.gameOverScreen.classList.add('visible');
-                });
-            },
-
-            goHome() {
-                this.cleanup();
-                this.state = GameState.MENU;
-
-                // Update UI
-                this.gameOverScreen.classList.remove('visible');
-                this.gameOverScreen.style.display = 'none';
-                this.startScreen.style.display = 'flex';
-
-                this.setRandomBackground();
-            },
-
-            // Handle collision between two bubbles
-            handleCollision(b1, b2) {
-                const r1 = b1.size / 2;
-                const r2 = b2.size / 2;
-                const c1x = b1.x + r1;
-                const c1y = b1.y + r1;
-                const c2x = b2.x + r2;
-                const c2y = b2.y + r2;
-
-                const dx = c2x - c1x;
-                const dy = c2y - c1y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                const minDistance = r1 + r2 + CONFIG.COLLISION_PADDING;
-
-                if (distance < minDistance && distance > 0) {
-                    // Normalize direction
-                    const nx = dx / distance;
-                    const ny = dy / distance;
-
-                    // Calculate overlap
-                    const overlap = minDistance - distance;
-
-                    // Push bubbles apart
-                    const push = overlap * CONFIG.PUSH_STRENGTH;
-                    b1.x -= nx * push * 0.5;
-                    b1.y -= ny * push * 0.5;
-                    b2.x += nx * push * 0.5;
-                    b2.y += ny * push * 0.5;
-                }
-            },
-
-            startAnimationLoop() {
-                let lastTime = performance.now();
-
-                const animate = (currentTime) => {
-                    if (this.state !== GameState.PLAYING) return;
-
-                    const deltaTime = Math.min((currentTime - lastTime) / 16, 3); // Cap delta
-                    lastTime = currentTime;
-
-                    const maxX = this.playAreaRect.width;
-                    const maxY = this.playAreaRect.height;
-
-                    // Update each bubble
-                    this.bubbles.forEach(bubble => {
-                        bubble.wobbleOffset += CONFIG.WOBBLE_SPEED * deltaTime;
-
-                        // Float upward with wobble
-                        bubble.y -= CONFIG.FLOAT_SPEED * deltaTime;
-                        bubble.x += Math.sin(bubble.wobbleOffset) * CONFIG.WOBBLE_AMOUNT * deltaTime;
-
-                        // Wrap around vertically
-                        if (bubble.y < -bubble.size) {
-                            bubble.y = maxY;
-                            bubble.x = Math.random() * (maxX - bubble.size);
-                        }
-
-                        // Keep X within bounds
-                        if (bubble.x < 0) bubble.x = 0;
-                        if (bubble.x > maxX - bubble.size) bubble.x = maxX - bubble.size;
-                    });
-
-                    // Handle collisions
-                    for (let i = 0; i < this.bubbles.length; i++) {
-                        for (let j = i + 1; j < this.bubbles.length; j++) {
-                            this.handleCollision(this.bubbles[i], this.bubbles[j]);
-                        }
-                    }
-
-                    // Ensure bubbles stay in bounds after collision
-                    this.bubbles.forEach(bubble => {
-                        if (bubble.x < 0) bubble.x = 0;
-                        if (bubble.x > maxX - bubble.size) bubble.x = maxX - bubble.size;
-                        if (bubble.y > maxY) bubble.y = maxY;
-
-                        // Update DOM
-                        bubble.element.style.left = bubble.x + 'px';
-                        bubble.element.style.top = bubble.y + 'px';
-                    });
-
-                    this.animationId = requestAnimationFrame(animate);
-                };
-
-                this.animationId = requestAnimationFrame(animate);
-            }
-        };
-
-        // Initialize game when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            Game.init();
+        riseSpots.forEach(s => {
+            const phase = (time * s.speed + s.offset) % 3.0;
+            const progress = phase / 3.0;
+            const bx = s.x + Math.sin(phase * 2.0) * 5;
+            const by = baseY - 8 - progress * 70;
+            const br = s.size * (0.5 + progress * 0.5);
+            const alpha = progress < 0.12 ? progress / 0.12 : (progress > 0.8 ? 1 - (progress - 0.8) / 0.2 : 1);
+
+            if (progress < 0.04) return;
+
+            const bgrad = ctx.createRadialGradient(bx - br*0.25, by - br*0.3, 0, bx, by, br);
+            bgrad.addColorStop(0, hexToRgba(color, alpha * 0.88));
+            bgrad.addColorStop(0.6, hexToRgba(color, alpha * 0.6));
+            bgrad.addColorStop(1, hexToRgba(darkColor, alpha * 0.65));
+            ctx.beginPath();
+            ctx.arc(bx, by, br, 0, Math.PI * 2);
+            ctx.fillStyle = bgrad;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(bx - br*0.28, by - br*0.3, br*0.28, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${alpha * 0.32})`;
+            ctx.fill();
         });
-    </script>
+    },
+
+    drawBottle(W, H, color, darkColor, time) {
+        const ctx = this.ctx;
+
+        // Bottle on LEFT side, mostly off-screen — only right end (body + spout) peeking in
+        const cx = -W * 0.05, cy = H * 0.22;
+        const bodyW = W * 0.34, bodyH = H * 0.12;
+        const neckW = bodyH * 0.5, neckLen = bodyW * 0.35;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(-0.12);
+
+        // === BOTTLE BODY ===
+        const bodyGrad = ctx.createLinearGradient(0, -bodyH/2, 0, bodyH/2);
+        bodyGrad.addColorStop(0, 'rgba(215,238,255,0.62)');
+        bodyGrad.addColorStop(0.45, 'rgba(178,212,242,0.48)');
+        bodyGrad.addColorStop(1, 'rgba(122,172,212,0.36)');
+
+        ctx.beginPath();
+        ctx.roundRect(-bodyW*0.1, -bodyH/2, bodyW, bodyH, bodyH*0.38);
+        ctx.fillStyle = bodyGrad;
+        ctx.strokeStyle = 'rgba(200,232,255,0.58)';
+        ctx.lineWidth = 1.5;
+        ctx.fill();
+        ctx.stroke();
+
+        // === NECK extends RIGHT (liquid pours rightward into scene) ===
+        ctx.beginPath();
+        ctx.roundRect(-bodyW*0.1 + bodyW - 2, -neckW/2, neckLen, neckW, neckW*0.45);
+        ctx.fillStyle = 'rgba(192,222,252,0.52)';
+        ctx.strokeStyle = 'rgba(202,232,255,0.52)';
+        ctx.lineWidth = 1.5;
+        ctx.fill();
+        ctx.stroke();
+
+        // === LIQUID INSIDE ===
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(-bodyW*0.1 + 2, -bodyH/2 + 2, bodyW - 4, bodyH - 4, bodyH*0.34);
+        ctx.clip();
+        const liqGrad = ctx.createLinearGradient(-bodyW*0.1, 0, -bodyW*0.1 + bodyW, 0);
+        liqGrad.addColorStop(0, hexToRgba(darkColor, 0.88));
+        liqGrad.addColorStop(0.55, hexToRgba(color, 0.72));
+        liqGrad.addColorStop(1, hexToRgba(color, 0.52));
+        ctx.fillStyle = liqGrad;
+        ctx.fillRect(-bodyW*0.1 + 2, -bodyH/2 + 2, bodyW * 0.78, bodyH - 4);
+        ctx.restore();
+
+        // === GLASS SHINE ===
+        ctx.beginPath();
+        ctx.roundRect(-bodyW*0.08 + 4, -bodyH/2 + 3, bodyW*0.12, bodyH*0.48, 3);
+        ctx.fillStyle = 'rgba(255,255,255,0.26)';
+        ctx.fill();
+
+        ctx.restore();
+
+        this.drawPouringLiquid(W, H, color, darkColor, time, cx, cy, bodyW, bodyH, neckLen);
+    },
+
+    drawPouringLiquid(W, H, color, darkColor, time, cx, cy, bodyW, bodyH, neckLen) {
+        const ctx = this.ctx;
+
+        const angle = -0.12;
+        const spoutLocalX = -bodyW * 0.1 + bodyW + neckLen - 2;
+        const spoutX = cx + Math.cos(angle) * spoutLocalX;
+        const spoutY = cy + Math.sin(angle) * spoutLocalX + bodyH * 0.12;
+
+        const cloudY = H * 0.38;
+        const wobble = Math.sin(time * 1.9) * 2;
+        const sw = 4.5 + Math.sin(time * 1.5) * 1.4;
+
+        const grad = ctx.createLinearGradient(spoutX, spoutY, spoutX + 12 + wobble, cloudY);
+        grad.addColorStop(0, hexToRgba(color, 0.92));
+        grad.addColorStop(0.65, hexToRgba(color, 0.65));
+        grad.addColorStop(1, hexToRgba(color, 0.2));
+
+        ctx.beginPath();
+        ctx.moveTo(spoutX, spoutY - sw/2);
+        ctx.bezierCurveTo(
+            spoutX + (cloudY - spoutY) * 0.28, spoutY - sw - 2 + wobble * 0.25,
+            spoutX + (cloudY - spoutY) * 0.6 + wobble, cloudY - 10,
+            spoutX + (cloudY - spoutY) * 0.48 + wobble + 6, cloudY
+        );
+        ctx.bezierCurveTo(
+            spoutX + (cloudY - spoutY) * 0.6 + wobble + sw, cloudY - 10,
+            spoutX + (cloudY - spoutY) * 0.28, spoutY + sw * 0.5 + wobble * 0.25,
+            spoutX, spoutY + sw/2
+        );
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Drip
+        const phase = (time * 0.88) % 1.0;
+        if (phase < 0.9) {
+            const px = spoutX + (cloudY - spoutY) * 0.48 * phase + wobble * phase + 4;
+            const py = spoutY + (cloudY - spoutY) * phase;
+            const dr = 2.5 + phase * 4.5;
+            ctx.beginPath();
+            ctx.arc(px, py, dr, 0, Math.PI * 2);
+            ctx.fillStyle = hexToRgba(color, 0.72 - phase * 0.32);
+            ctx.fill();
+        }
+    }
+};
+
+
+/* ============================================
+   LIGHTNING RENDERER
+============================================ */
+const LightningRenderer = {
+    canvas: null,
+    ctx: null,
+    bolts: [],
+    animFrame: null,
+    time: 0,
+    color: '#fff',
+
+    init(canvas, color) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.color = color;
+        this.bolts = [];
+        this.resize();
+    },
+
+    resize() {
+        if (!this.canvas) return;
+        this.canvas.width = this.canvas.parentElement.clientWidth;
+        this.canvas.height = this.canvas.parentElement.clientHeight;
+    },
+
+    stop() {
+        if (this.animFrame) cancelAnimationFrame(this.animFrame);
+        this.animFrame = null;
+        if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+
+    fire(fromX, fromY, targets) {
+        this.stop();
+        this.bolts = targets.map(t => ({
+            x1: fromX, y1: fromY,
+            x2: t.x, y2: t.y,
+            life: 1.0
+        }));
+        this.time = 0;
+        const animate = () => {
+            this.time += 0.05;
+            this.drawBolts();
+            this.bolts.forEach(b => b.life -= 0.04);
+            if (this.bolts.some(b => b.life > 0)) {
+                this.animFrame = requestAnimationFrame(animate);
+            } else {
+                this.stop();
+            }
+        };
+        this.animFrame = requestAnimationFrame(animate);
+    },
+
+    drawBolts() {
+        const { ctx, canvas, bolts, color } = this;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        bolts.forEach(bolt => {
+            if (bolt.life <= 0) return;
+            this.drawLightningBolt(bolt.x1, bolt.y1, bolt.x2, bolt.y2, bolt.life, color);
+        });
+    },
+
+    drawLightningBolt(x1, y1, x2, y2, alpha, color) {
+        const ctx = this.ctx;
+        const points = this.generateLightningPoints(x1, y1, x2, y2, 4);
+
+        // Outer glow
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.3;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 6;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = color;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        points.forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+
+        // Core
+        ctx.globalAlpha = alpha * 0.9;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        points.forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+        ctx.restore();
+    },
+
+    generateLightningPoints(x1, y1, x2, y2, detail) {
+        let points = [{ x: x1, y: y1 }, { x: x2, y: y2 }];
+        for (let i = 0; i < detail; i++) {
+            const newPoints = [points[0]];
+            for (let j = 1; j < points.length; j++) {
+                const mx = (points[j-1].x + points[j].x) / 2;
+                const my = (points[j-1].y + points[j].y) / 2;
+                const offset = (Math.random() - 0.5) * 40 * Math.pow(0.5, i);
+                const dx = points[j].y - points[j-1].y;
+                const dy = -(points[j].x - points[j-1].x);
+                const len = Math.sqrt(dx*dx + dy*dy) || 1;
+                newPoints.push({ x: mx + (dx/len)*offset, y: my + (dy/len)*offset });
+                newPoints.push(points[j]);
+            }
+            points = newPoints;
+        }
+        return points;
+    }
+};
+
+/* ============================================
+   MENU BUBBLES (floating bg on start screen)
+============================================ */
+const MenuBubbles = {
+    canvas: null,
+    ctx: null,
+    bubbles: [],
+    animFrame: null,
+
+    init(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.bubbles = [];
+        this.resize();
+        this.spawn();
+        this.start();
+    },
+
+    resize() {
+        if (!this.canvas) return;
+        this.canvas.width = this.canvas.parentElement.clientWidth;
+        this.canvas.height = this.canvas.parentElement.clientHeight;
+    },
+
+    spawn() {
+        const W = this.canvas.width, H = this.canvas.height;
+        for (let i = 0; i < 18; i++) {
+            this.bubbles.push({
+                x: Math.random() * W,
+                y: Math.random() * H,
+                r: 12 + Math.random() * 30,
+                speed: 0.2 + Math.random() * 0.5,
+                wobble: Math.random() * Math.PI * 2,
+                wobbleSpeed: 0.008 + Math.random() * 0.012,
+                alpha: 0.04 + Math.random() * 0.1
+            });
+        }
+    },
+
+    stop() {
+        if (this.animFrame) cancelAnimationFrame(this.animFrame);
+        this.animFrame = null;
+    },
+
+    start() {
+        this.stop();
+        const animate = () => {
+            this.draw();
+            this.animFrame = requestAnimationFrame(animate);
+        };
+        this.animFrame = requestAnimationFrame(animate);
+    },
+
+    draw() {
+        const { ctx, canvas, bubbles } = this;
+        if (!ctx) return;
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        bubbles.forEach(b => {
+            b.wobble += b.wobbleSpeed;
+            b.y -= b.speed;
+            b.x += Math.sin(b.wobble) * 0.4;
+            if (b.y < -b.r * 2) {
+                b.y = H + b.r;
+                b.x = Math.random() * W;
+            }
+
+            // Draw soap bubble
+            const grad = ctx.createRadialGradient(b.x - b.r*0.3, b.y - b.r*0.3, 0, b.x, b.y, b.r);
+            grad.addColorStop(0, `rgba(255,255,255,${b.alpha * 2})`);
+            grad.addColorStop(0.4, `rgba(255,255,255,${b.alpha})`);
+            grad.addColorStop(1, `rgba(255,255,255,${b.alpha * 0.3})`);
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(255,255,255,${b.alpha * 3})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+        });
+    }
+};
+
+/* ============================================
+   CLOUD CARD RENDERER (end screen)
+============================================ */
+function drawCloudCard(canvas) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const puffs = [
+        { x: W*0.12, y: H*0.52, r: W*0.13 },
+        { x: W*0.28, y: H*0.38, r: W*0.17 },
+        { x: W*0.5,  y: H*0.3,  r: W*0.21 },
+        { x: W*0.72, y: H*0.38, r: W*0.17 },
+        { x: W*0.88, y: H*0.52, r: W*0.13 },
+        { x: W*0.2,  y: H*0.58, r: W*0.15 },
+        { x: W*0.5,  y: H*0.54, r: W*0.18 },
+        { x: W*0.78, y: H*0.56, r: W*0.15 },
+    ];
+
+    const fillY = H * 0.5;
+
+    // Shadow pass
+    ctx.save();
+    ctx.shadowBlur = 24;
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowOffsetY = 10;
+    puffs.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#ede0cc';
+        ctx.fill();
+    });
+    ctx.restore();
+
+    // Puff fill
+    puffs.forEach(p => {
+        const grad = ctx.createRadialGradient(p.x - p.r*0.22, p.y - p.r*0.28, 0, p.x, p.y, p.r);
+        grad.addColorStop(0, '#fdf5e8');
+        grad.addColorStop(0.6, '#f0e0c8');
+        grad.addColorStop(1, '#e2cdb0');
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+    });
+
+    // Solid bottom fill to close the card
+    ctx.fillStyle = '#ecdec8';
+    ctx.fillRect(0, fillY, W, H - fillY);
+
+    // Subtle bottom gradient
+    const btmGrad = ctx.createLinearGradient(0, fillY, 0, H);
+    btmGrad.addColorStop(0, 'rgba(240,224,200,0)');
+    btmGrad.addColorStop(1, 'rgba(210,190,160,0.4)');
+    ctx.fillStyle = btmGrad;
+    ctx.fillRect(0, fillY, W, H - fillY);
+}
+
+/* ============================================
+   HELPER
+============================================ */
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/* ============================================
+   GAME STATE
+============================================ */
+const GameState = { MENU: 'menu', PLAYING: 'playing', CHAIN_REACTION: 'chain', GAME_OVER: 'gameover' };
+
+const Game = {
+    state: GameState.MENU,
+    bubbles: [],
+    badBubbleId: null,
+    score: 0,
+    bestScore: 0,
+    animationId: null,
+    respawnTimeouts: [],
+    playAreaRect: null,
+    currentScene: null,
+
+    init() {
+        this.playArea = document.getElementById('play-area');
+        this.gameContainer = document.getElementById('game-container');
+        this.scoreDisplay = document.getElementById('score-display');
+        this.startScreen = document.getElementById('start-screen');
+        this.gameOverScreen = document.getElementById('game-over-screen');
+        this.finalScoreEl = document.getElementById('final-score');
+        this.bestScoreEl = document.getElementById('best-score');
+        this.sceneCanvas = document.getElementById('scene-canvas');
+        this.lightningCanvas = document.getElementById('lightning-canvas');
+        this.exitButton = document.getElementById('exit-button');
+
+        this.bestScore = parseInt(localStorage.getItem('badBubbleBest')) || 0;
+
+        // Build color grid
+        this.buildColorGrid();
+
+        // Init menu bubbles
+        const menuCanvas = document.getElementById('menu-bubbles-canvas');
+        menuCanvas.width = this.gameContainer.clientWidth;
+        menuCanvas.height = this.gameContainer.clientHeight;
+        MenuBubbles.init(menuCanvas);
+
+        // Init lightning
+        LightningRenderer.init(this.lightningCanvas, '#fff');
+
+        // Draw cloud card
+        drawCloudCard(document.getElementById('cloud-canvas'));
+
+        // Buttons
+        document.getElementById('play-again-button').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.startGame(this.currentScene);
+        });
+        document.getElementById('home-button').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.goHome();
+        });
+        this.exitButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.goHome();
+        });
+
+        window.addEventListener('resize', () => this.updatePlayAreaRect());
+    },
+
+    buildColorGrid() {
+        const grid = document.getElementById('color-grid');
+        SCENES.forEach(scene => {
+            const opt = document.createElement('div');
+            opt.className = 'color-option';
+            opt.innerHTML = `
+                <div class="color-circle ${scene.id === 'black' ? 'is-dark' : ''}" style="background: ${scene.color};"></div>
+                <span class="color-name">${scene.name}</span>
+            `;
+            opt.addEventListener('click', () => this.startGame(scene));
+            grid.appendChild(opt);
+        });
+    },
+
+    updatePlayAreaRect() {
+        this.playAreaRect = this.playArea.getBoundingClientRect();
+    },
+
+    cleanup() {
+        if (this.animationId) { cancelAnimationFrame(this.animationId); this.animationId = null; }
+        this.respawnTimeouts.forEach(t => clearTimeout(t));
+        this.respawnTimeouts = [];
+        this.bubbles = [];
+        this.playArea.innerHTML = '';
+        SceneRenderer.stop();
+        LightningRenderer.stop();
+    },
+
+    startGame(scene) {
+        this.cleanup();
+        this.currentScene = scene;
+        AudioManager.init();
+
+        this.state = GameState.PLAYING;
+        this.score = 0;
+        this.badBubbleId = null;
+
+        // Update background
+        this.gameContainer.style.background = BG_COLOR;
+
+        // UI
+        this.scoreDisplay.textContent = '0';
+        this.scoreDisplay.style.display = 'flex';
+        this.startScreen.style.display = 'none';
+        this.gameOverScreen.classList.remove('visible');
+        this.gameOverScreen.style.display = 'none';
+        this.exitButton.style.display = 'block';
+
+        // Start scene renderer
+        SceneRenderer.init(this.sceneCanvas, scene.color, scene.dark);
+        LightningRenderer.init(this.lightningCanvas, scene.color);
+
+        this.updatePlayAreaRect();
+        this.createInitialBubbles(scene.color);
+        this.assignBadBubble();
+        this.startAnimationLoop();
+    },
+
+    createInitialBubbles(color) {
+        for (let i = 0; i < CONFIG.BUBBLE_COUNT; i++) {
+            this.createBubble(false, true, color);
+        }
+    },
+
+    findNonOverlappingPosition(size) {
+        const maxX = this.playAreaRect.width - size;
+        const maxY = this.playAreaRect.height * 0.70 - size; // stay above cloud
+        for (let attempt = 0; attempt < 50; attempt++) {
+            const x = Math.random() * maxX;
+            const y = Math.random() * maxY;
+            const r = size / 2;
+            let ok = true;
+            for (const other of this.bubbles) {
+                const or = other.size / 2;
+                const dx = (x + r) - (other.x + or);
+                const dy = (y + r) - (other.y + or);
+                if (Math.sqrt(dx*dx + dy*dy) < r + or + CONFIG.COLLISION_PADDING) { ok = false; break; }
+            }
+            if (ok) return { x, y };
+        }
+        return { x: Math.random() * maxX, y: Math.random() * maxY };
+    },
+
+    createBubble(delayed = false, initialPlacement = false, color = null) {
+        if (this.state !== GameState.PLAYING) return null;
+        const sceneColor = color || this.currentScene?.color || '#fcd831';
+
+        const el = document.createElement('div');
+        el.className = 'bubble';
+
+        const id = 'b_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
+        el.dataset.id = id;
+
+        const size = CONFIG.BUBBLE_SIZE_MIN + Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
+        el.style.width = size + 'px';
+        el.style.height = size + 'px';
+
+        // Colored bubble style
+        const r = parseInt(sceneColor.slice(1,3), 16);
+        const g = parseInt(sceneColor.slice(3,5), 16);
+        const b = parseInt(sceneColor.slice(5,7), 16);
+
+        el.style.background = `
+            radial-gradient(ellipse 38% 38% at 28% 22%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 40%, transparent 70%),
+            radial-gradient(ellipse 20% 15% at 68% 72%, rgba(255,255,255,0.35) 0%, transparent 60%),
+            radial-gradient(ellipse 100% 100% at 50% 50%, rgba(${r},${g},${b},0.95) 0%, rgba(${Math.max(0,r-40)},${Math.max(0,g-40)},${Math.max(0,b-40)},1) 100%)
+        `;
+        el.style.boxShadow = `0 0 16px rgba(${r},${g},${b},0.4), 0 4px 12px rgba(0,0,0,0.3), inset 0 0 12px rgba(255,255,255,0.1)`;
+        el.style.border = `1.5px solid rgba(255,255,255,0.25)`;
+
+        const pos = this.findNonOverlappingPosition(size);
+        el.style.left = pos.x + 'px';
+        el.style.top = pos.y + 'px';
+
+        const bubbleData = {
+            id, element: el,
+            x: pos.x, y: pos.y, size,
+            wobbleOffset: Math.random() * Math.PI * 2,
+            vx: 0, vy: 0
+        };
+
+        const handleClick = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            this.handleBubbleClick(id);
+        };
+        el.addEventListener('click', handleClick);
+        el.addEventListener('touchend', handleClick, { passive: false });
+
+        if (delayed) {
+            el.style.opacity = '0';
+            el.style.transform = 'scale(0.3)';
+            this.playArea.appendChild(el);
+            requestAnimationFrame(() => {
+                el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                el.style.opacity = '1';
+                el.style.transform = 'scale(1)';
+                setTimeout(() => { el.style.transition = 'transform 0.1s ease-out'; }, 400);
+            });
+        } else {
+            this.playArea.appendChild(el);
+        }
+
+        this.bubbles.push(bubbleData);
+        return id;
+    },
+
+    assignBadBubble() {
+        if (this.bubbles.length > 0) {
+            this.badBubbleId = this.bubbles[Math.floor(Math.random() * this.bubbles.length)].id;
+        }
+    },
+
+    handleBubbleClick(id) {
+        if (this.state !== GameState.PLAYING) return;
+        const idx = this.bubbles.findIndex(b => b.id === id);
+        if (idx === -1) return;
+        const bubble = this.bubbles[idx];
+
+        if (id === this.badBubbleId) {
+            this.handleBadBubble(bubble);
+        } else {
+            this.handleNormalBubble(bubble, idx);
+        }
+    },
+
+    handleNormalBubble(bubble, index) {
+        AudioManager.playPop();
+        this.score++;
+        this.scoreDisplay.textContent = this.score;
+
+        // Splat effect
+        this.createSplat(bubble.x + bubble.size/2, bubble.y + bubble.size/2, this.currentScene.color);
+
+        bubble.element.classList.add('popping');
+        this.bubbles.splice(index, 1);
+
+        setTimeout(() => { if (bubble.element.parentNode) bubble.element.remove(); }, 300);
+
+        const timeout = setTimeout(() => {
+            if (this.state === GameState.PLAYING) {
+                const newId = this.createBubble(true, false, this.currentScene.color);
+                if (newId && !this.bubbles.find(b => b.id === this.badBubbleId)) {
+                    this.badBubbleId = newId;
+                }
+            }
+        }, CONFIG.RESPAWN_DELAY);
+        this.respawnTimeouts.push(timeout);
+    },
+
+    handleBadBubble(bubble) {
+        this.state = GameState.CHAIN_REACTION;
+
+        setTimeout(() => {
+            AudioManager.playFart();
+
+            const cx = bubble.x + bubble.size/2;
+            const cy = bubble.y + bubble.size/2;
+
+            // Flash white
+            bubble.element.style.background = 'radial-gradient(circle, #ffffff 0%, rgba(255,255,255,0.8) 60%, rgba(255,255,255,0.2) 100%)';
+            bubble.element.style.boxShadow = '0 0 40px #fff, 0 0 80px rgba(255,255,255,0.5)';
+
+            // Lightning to all other bubbles
+            const targets = this.bubbles
+                .filter(b => b.id !== bubble.id)
+                .map(b => ({ x: b.x + b.size/2, y: b.y + b.size/2 }));
+
+            AudioManager.playZap();
+            LightningRenderer.fire(cx, cy, targets);
+
+            // Pop bad bubble
+            setTimeout(() => {
+                bubble.element.classList.add('popping');
+                const badIdx = this.bubbles.findIndex(b => b.id === bubble.id);
+                if (badIdx !== -1) this.bubbles.splice(badIdx, 1);
+            }, 100);
+
+            // Chain pop others
+            const remaining = [...this.bubbles];
+            remaining.forEach((b, i) => {
+                setTimeout(() => {
+                    AudioManager.playChainPop(0);
+                    this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
+                    b.element.classList.add('chain-pop');
+                }, 80 + i * 60);
+            });
+
+            this.bubbles = [];
+            const totalTime = 80 + remaining.length * 60 + 600;
+            setTimeout(() => this.showGameOver(), totalTime);
+
+        }, CONFIG.BAD_BUBBLE_DELAY);
+    },
+
+    createSplat(cx, cy, color) {
+        const count = 10 + Math.floor(Math.random() * 6);
+        for (let i = 0; i < count; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'splat-particle';
+
+            const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.8;
+            const dist = 30 + Math.random() * 50;
+            const size = 4 + Math.random() * 10;
+            const duration = 0.3 + Math.random() * 0.3;
+
+            particle.style.cssText = `
+                left: ${cx - size/2}px;
+                top: ${cy - size/2}px;
+                width: ${size}px;
+                height: ${size}px;
+                background: ${color};
+                box-shadow: 0 0 6px ${color};
+                --tx: ${Math.cos(angle) * dist}px;
+                --ty: ${Math.sin(angle) * dist}px;
+                --duration: ${duration}s;
+            `;
+
+            this.playArea.appendChild(particle);
+            setTimeout(() => { if (particle.parentNode) particle.remove(); }, duration * 1000 + 50);
+        }
+    },
+
+    showGameOver() {
+        this.state = GameState.GAME_OVER;
+        if (this.animationId) { cancelAnimationFrame(this.animationId); this.animationId = null; }
+        this.respawnTimeouts.forEach(t => clearTimeout(t));
+        this.respawnTimeouts = [];
+
+        if (this.score > this.bestScore) {
+            this.bestScore = this.score;
+            localStorage.setItem('badBubbleBest', this.bestScore);
+        }
+
+        this.finalScoreEl.textContent = this.score;
+        this.bestScoreEl.textContent = this.bestScore;
+        this.scoreDisplay.style.display = 'none';
+        this.exitButton.style.display = 'none';
+
+        this.gameOverScreen.style.display = 'flex';
+        requestAnimationFrame(() => this.gameOverScreen.classList.add('visible'));
+    },
+
+    goHome() {
+        this.cleanup();
+        this.state = GameState.MENU;
+        this.gameOverScreen.classList.remove('visible');
+        this.gameOverScreen.style.display = 'none';
+        this.scoreDisplay.style.display = 'none';
+        this.exitButton.style.display = 'none';
+        this.startScreen.style.display = 'flex';
+        this.gameContainer.style.background = BG_COLOR;
+        MenuBubbles.start();
+    },
+
+    handleCollision(b1, b2) {
+        const r1 = b1.size/2, r2 = b2.size/2;
+        const dx = (b2.x+r2) - (b1.x+r1), dy = (b2.y+r2) - (b1.y+r1);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const minDist = r1 + r2 + CONFIG.COLLISION_PADDING;
+        if (dist < minDist && dist > 0) {
+            const nx = dx/dist, ny = dy/dist;
+            const overlap = (minDist - dist) * CONFIG.PUSH_STRENGTH;
+            b1.x -= nx * overlap * 0.5; b1.y -= ny * overlap * 0.5;
+            b2.x += nx * overlap * 0.5; b2.y += ny * overlap * 0.5;
+        }
+    },
+
+    startAnimationLoop() {
+        let lastTime = performance.now();
+        const animate = (currentTime) => {
+            if (this.state !== GameState.PLAYING) return;
+            const dt = Math.min((currentTime - lastTime) / 16, 3);
+            lastTime = currentTime;
+
+            const maxX = this.playAreaRect.width;
+            const maxY = this.playAreaRect.height * 0.70; // stay above cloud
+
+            this.bubbles.forEach(b => {
+                b.wobbleOffset += CONFIG.WOBBLE_SPEED * dt;
+                b.y -= CONFIG.FLOAT_SPEED * dt;
+                b.x += Math.sin(b.wobbleOffset) * CONFIG.WOBBLE_AMOUNT * dt;
+
+                // Wrap at top - respawn from bottom
+                if (b.y < -b.size) {
+                    b.y = maxY;
+                    b.x = Math.random() * (maxX - b.size);
+                }
+                if (b.x < 0) b.x = 0;
+                if (b.x > maxX - b.size) b.x = maxX - b.size;
+                if (b.y > maxY) b.y = maxY;
+            });
+
+            for (let i = 0; i < this.bubbles.length; i++) {
+                for (let j = i+1; j < this.bubbles.length; j++) {
+                    this.handleCollision(this.bubbles[i], this.bubbles[j]);
+                }
+            }
+
+            // Clamp X strictly, let Y float freely (wrapping handled above)
+            this.bubbles.forEach(b => {
+                b.x = Math.max(0, Math.min(b.x, maxX - b.size));
+                // Y: only clamp bottom edge, top wraps back to bottom naturally
+                if (b.y > maxY - b.size) b.y = maxY - b.size;
+                b.element.style.left = b.x + 'px';
+                b.element.style.top = b.y + 'px';
+            });
+
+            this.animationId = requestAnimationFrame(animate);
+        };
+        this.animationId = requestAnimationFrame(animate);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => Game.init());
+</script>
 </body>
 </html>
