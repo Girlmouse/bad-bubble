@@ -138,6 +138,22 @@
             100% { transform: translate(var(--tx), var(--ty)) scale(0.2); opacity: 0; }
         }
 
+        .shockwave {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 7;
+            border: 3px solid rgba(255,255,255,0.9);
+            transform: translate(-50%, -50%) scale(0);
+            animation: shockwaveExpand 0.6s ease-out forwards;
+        }
+
+        @keyframes shockwaveExpand {
+            0%   { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            60%  { opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
+        }
+
         /* ============================================
            MAIN / START SCREEN
         ============================================ */
@@ -863,12 +879,12 @@ const LightningRenderer = {
         points.forEach(p => ctx.lineTo(p.x, p.y));
         ctx.stroke();
 
-        // Core
+        // Core — slightly lighter version of scene color
         ctx.globalAlpha = alpha * 0.9;
-        ctx.strokeStyle = '#ffffff';
+        ctx.strokeStyle = this.color;
         ctx.lineWidth = 1.5;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
         points.forEach(p => ctx.lineTo(p.x, p.y));
@@ -1319,45 +1335,72 @@ const Game = {
     handleBadBubble(bubble) {
         this.state = GameState.CHAIN_REACTION;
 
+        const cx = bubble.x + bubble.size/2;
+        const cy = bubble.y + bubble.size/2;
+        const el = bubble.element;
+
+        // STEP 1: Big splat explosion + shockwave ring + grow effect on bad bubble
+        this.createSplat(cx, cy, '#ffffff');
+        this.createSplat(cx, cy, this.currentScene.color);
+
+        // Shockwave ring expanding outward
+        const shock = document.createElement('div');
+        shock.className = 'shockwave';
+        shock.style.left = cx + 'px';
+        shock.style.top = cy + 'px';
+        shock.style.width = bubble.size + 'px';
+        shock.style.height = bubble.size + 'px';
+        this.playArea.appendChild(shock);
+        setTimeout(() => { if (shock.parentNode) shock.remove(); }, 700);
+
+        el.style.transition = 'transform 0.35s ease-out, box-shadow 0.35s ease-out, background 0.2s ease';
+        el.style.transform = 'scale(2.2)';
+        el.style.background = 'radial-gradient(circle, #ffffff 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.3) 100%)';
+        el.style.boxShadow = '0 0 60px #fff, 0 0 120px rgba(255,255,255,0.6), 0 0 200px rgba(255,255,255,0.3)';
+        el.style.zIndex = '15';
+
+        // STEP 2: Fart sound plays with the explosion
+        AudioManager.playFart();
+
+        // STEP 3: Hold the dramatic moment, bubble pulses
         setTimeout(() => {
-            AudioManager.playFart();
+            el.style.transform = 'scale(1.6)';
+        }, 200);
 
-            const cx = bubble.x + bubble.size/2;
-            const cy = bubble.y + bubble.size/2;
+        // STEP 4: After pause, bubble pops and lightning fires
+        setTimeout(() => {
+            // Pop the bad bubble with splat
+            el.style.transition = 'transform 0.2s ease-in, opacity 0.2s ease-in';
+            el.style.transform = 'scale(0)';
+            el.style.opacity = '0';
+            setTimeout(() => { if (el.parentNode) el.remove(); }, 200);
 
-            // Flash white
-            bubble.element.style.background = 'radial-gradient(circle, #ffffff 0%, rgba(255,255,255,0.8) 60%, rgba(255,255,255,0.2) 100%)';
-            bubble.element.style.boxShadow = '0 0 40px #fff, 0 0 80px rgba(255,255,255,0.5)';
+            const badIdx = this.bubbles.findIndex(b => b.id === bubble.id);
+            if (badIdx !== -1) this.bubbles.splice(badIdx, 1);
 
-            // Lightning to all other bubbles
-            const targets = this.bubbles
-                .filter(b => b.id !== bubble.id)
-                .map(b => ({ x: b.x + b.size/2, y: b.y + b.size/2 }));
-
+            // Lightning fires at remaining bubbles
+            const targets = this.bubbles.map(b => ({ x: b.x + b.size/2, y: b.y + b.size/2 }));
             LightningRenderer.fire(cx, cy, targets);
 
-            // Pop bad bubble
-            setTimeout(() => {
-                bubble.element.classList.add('popping');
-                const badIdx = this.bubbles.findIndex(b => b.id === bubble.id);
-                if (badIdx !== -1) this.bubbles.splice(badIdx, 1);
-            }, 100);
-
-            // Chain pop others
+            // STEP 5: Chain pop cascade after brief lightning pause
             const remaining = [...this.bubbles];
-            remaining.forEach((b, i) => {
-                setTimeout(() => {
-                    AudioManager.playChainPop();
-                    this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
-                    b.element.classList.add('chain-pop');
-                }, 80 + i * 60);
-            });
+            setTimeout(() => {
+                remaining.forEach((b, i) => {
+                    setTimeout(() => {
+                        AudioManager.playChainPop();
+                        this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
+                        b.element.classList.add('chain-pop');
+                    }, i * 80);
+                });
 
-            this.bubbles = [];
-            const totalTime = 80 + remaining.length * 60 + 400 + 2000;
-            setTimeout(() => this.showGameOver(), totalTime);
+                this.bubbles = [];
 
-        }, CONFIG.BAD_BUBBLE_DELAY);
+                // STEP 6: Wait for all pops + 2s pause then show game over
+                const totalTime = remaining.length * 80 + 400 + 2000;
+                setTimeout(() => this.showGameOver(), totalTime);
+            }, 400);
+
+        }, 700);
     },
 
     createSplat(cx, cy, color) {
@@ -1448,14 +1491,25 @@ const Game = {
                 b.y -= CONFIG.FLOAT_SPEED * dt;
                 b.x += Math.sin(b.wobbleOffset) * CONFIG.WOBBLE_AMOUNT * dt;
 
-                // Wrap at top - respawn from bottom
-                if (b.y < -b.size) {
-                    b.y = maxY;
-                    b.x = Math.random() * (maxX - b.size);
+                const isBad = b.id === this.badBubbleId;
+
+                if (isBad) {
+                    // Bad bubble strictly contained at all times
+                    b.x = Math.max(0, Math.min(b.x, maxX - b.size));
+                    if (b.y < 10) b.y = 10;
+                    if (b.y > maxY - b.size) b.y = maxY - b.size;
+                } else {
+                    // Regular bubbles wrap at top, allowed slight horizontal drift
+                    if (b.y < -b.size) {
+                        b.y = maxY - b.size * 0.5;
+                        b.x = Math.random() * (maxX - b.size);
+                    }
+                    // Allow drifting a little off sides (up to half bubble width)
+                    // but not fully disappearing
+                    const margin = b.size * 0.5;
+                    b.x = Math.max(-margin, Math.min(b.x, maxX - b.size + margin));
+                    if (b.y > maxY - b.size) b.y = maxY - b.size;
                 }
-                if (b.x < 0) b.x = 0;
-                if (b.x > maxX - b.size) b.x = maxX - b.size;
-                if (b.y > maxY) b.y = maxY;
             });
 
             for (let i = 0; i < this.bubbles.length; i++) {
@@ -1464,11 +1518,17 @@ const Game = {
                 }
             }
 
-            // Clamp X strictly, let Y float freely (wrapping handled above)
+            // Final clamp — bad bubble strictly inside, others softly contained
             this.bubbles.forEach(b => {
-                b.x = Math.max(0, Math.min(b.x, maxX - b.size));
-                // Y: only clamp bottom edge, top wraps back to bottom naturally
-                if (b.y > maxY - b.size) b.y = maxY - b.size;
+                const isBad = b.id === this.badBubbleId;
+                if (isBad) {
+                    b.x = Math.max(0, Math.min(b.x, maxX - b.size));
+                    b.y = Math.max(10, Math.min(b.y, maxY - b.size));
+                } else {
+                    const margin = b.size * 0.5;
+                    b.x = Math.max(-margin, Math.min(b.x, maxX - b.size + margin));
+                    if (b.y > maxY - b.size) b.y = maxY - b.size;
+                }
                 b.element.style.left = b.x + 'px';
                 b.element.style.top = b.y + 'px';
             });
