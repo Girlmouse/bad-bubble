@@ -484,68 +484,75 @@ const CONFIG = {
    AUDIO
 ============================================ */
 const AudioManager = {
-    context: null,
+    bgMusic: null,
+    sounds: {},
+
     init() {
-        if (!this.context) this.context = new (window.AudioContext || window.webkitAudioContext)();
-        if (this.context.state === 'suspended') this.context.resume();
+        // Load all sounds once
+        if (Object.keys(this.sounds).length > 0) {
+            // Already loaded — just resume bg music
+            this.startMusic();
+            return;
+        }
+
+        // Preload sound effects
+        this.sounds.pop      = new Audio('audio/pop.mp3');
+        this.sounds.fart     = new Audio('audio/fart.mp3');
+        this.sounds.zap      = new Audio('audio/zap.mp3');
+        this.sounds.chainpop = new Audio('audio/chainpop.mp3');
+
+        // Set volumes
+        this.sounds.pop.volume      = 0.7;
+        this.sounds.fart.volume     = 0.9;
+        this.sounds.zap.volume      = 0.85;
+        this.sounds.chainpop.volume = 0.6;
+
+        // Background music — looping, quiet
+        this.bgMusic = new Audio('audio/music.mp3');
+        this.bgMusic.loop   = true;
+        this.bgMusic.volume = 0.25;
+
+        this.startMusic();
     },
+
+    startMusic() {
+        if (!this.bgMusic) return;
+        this.bgMusic.currentTime = 0;
+        this.bgMusic.play().catch(() => {}); // catch autoplay policy silently
+    },
+
+    stopMusic() {
+        if (!this.bgMusic) return;
+        this.bgMusic.pause();
+        this.bgMusic.currentTime = 0;
+    },
+
     playPop() {
-        if (!this.context) return;
-        const ctx = this.context, now = ctx.currentTime;
-        const osc = ctx.createOscillator(), gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(700, now);
-        osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
-        gain.gain.setValueAtTime(0.13, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(now); osc.stop(now + 0.12);
+        if (!this.sounds.pop) return;
+        const s = this.sounds.pop.cloneNode();
+        s.volume = 0.7;
+        s.play().catch(() => {});
     },
+
     playFart() {
-        if (!this.context) return;
-        const ctx = this.context, now = ctx.currentTime;
-        const osc1 = ctx.createOscillator(), gain1 = ctx.createGain();
-        osc1.type = 'sawtooth';
-        osc1.frequency.setValueAtTime(80, now);
-        osc1.frequency.exponentialRampToValueAtTime(38, now + 0.35);
-        gain1.gain.setValueAtTime(0.22, now);
-        gain1.gain.linearRampToValueAtTime(0.1, now + 0.15);
-        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-        const mod = ctx.createOscillator(), modGain = ctx.createGain();
-        mod.frequency.setValueAtTime(22, now); modGain.gain.setValueAtTime(28, now);
-        mod.connect(modGain); modGain.connect(osc1.frequency);
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'lowpass'; filter.frequency.setValueAtTime(380, now);
-        filter.frequency.linearRampToValueAtTime(120, now + 0.35);
-        osc1.connect(filter); filter.connect(gain1); gain1.connect(ctx.destination);
-        mod.start(now); osc1.start(now); mod.stop(now + 0.4); osc1.stop(now + 0.4);
+        if (!this.sounds.fart) return;
+        const s = this.sounds.fart.cloneNode();
+        s.volume = 0.9;
+        s.play().catch(() => {});
     },
+
     playZap() {
-        if (!this.context) return;
-        const ctx = this.context, now = ctx.currentTime;
-        const bufferSize = ctx.sampleRate * 0.3;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.15));
-        const noise = ctx.createBufferSource(), gain = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass'; filter.frequency.value = 1200; filter.Q.value = 0.5;
-        noise.buffer = buffer;
-        gain.gain.setValueAtTime(0.4, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-        noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
-        noise.start(now);
+        if (!this.sounds.zap) return;
+        const s = this.sounds.zap.cloneNode();
+        s.volume = 0.85;
+        s.play().catch(() => {});
     },
-    playChainPop(delay) {
-        if (!this.context) return;
-        const ctx = this.context, now = ctx.currentTime + delay;
-        const osc = ctx.createOscillator(), gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(400 + Math.random() * 200, now);
-        osc.frequency.exponentialRampToValueAtTime(100, now + 0.08);
-        gain.gain.setValueAtTime(0.07, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(now); osc.stop(now + 0.08);
+
+    playChainPop() {
+        if (!this.sounds.chainpop) return;
+        const s = this.sounds.chainpop.cloneNode();
+        s.volume = 0.6;
+        s.play().catch(() => {});
     }
 };
 
@@ -1333,7 +1340,7 @@ const Game = {
             const remaining = [...this.bubbles];
             remaining.forEach((b, i) => {
                 setTimeout(() => {
-                    AudioManager.playChainPop(0);
+                    AudioManager.playChainPop();
                     this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
                     b.element.classList.add('chain-pop');
                 }, 80 + i * 60);
