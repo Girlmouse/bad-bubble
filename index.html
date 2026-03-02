@@ -820,13 +820,14 @@ const AudioManager = {
         this.bubblesTrack.loop = true;
         this.bubblesTrack.volume = 0;
 
-        // Start both — bubbles always running in background
-        this.menuTrack.play().catch(() => {});
-        this.bubblesTrack.play().catch(() => {});
-
-        // Fade in for menu state
-        this._fadeTo(this.menuTrack,   this.MENU_MUSIC_VOL,  this.FADE_MUSIC);
-        this._fadeTo(this.bubblesTrack, this.MENU_BUBBLES_VOL, this.FADE_BUBBLES);
+        // Start both tracks — bubbles always running, just volume-controlled
+        // Chain the second play after first to stay within gesture context on mobile
+        const p1 = this.menuTrack.play().catch(() => {});
+        const p2 = this.bubblesTrack.play().catch(() => {});
+        Promise.all([p1, p2]).then(() => {
+            this._fadeTo(this.menuTrack,    this.MENU_MUSIC_VOL,   this.FADE_MUSIC);
+            this._fadeTo(this.bubblesTrack, this.MENU_BUBBLES_VOL, this.FADE_BUBBLES);
+        });
     },
 
     // Also kept for compatibility
@@ -1598,8 +1599,7 @@ this.streakFlash = document.getElementById('streak-flash');
         this.cleanup();
         this.currentScene = scene;
         AudioManager.init();
-        // Small delay so the fade-out of menu track has time to register
-        setTimeout(() => AudioManager.startSceneMusic(), 50);
+        AudioManager.startSceneMusic();
 
         this.state = GameState.PLAYING;
         this.score = 0;
