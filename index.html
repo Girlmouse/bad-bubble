@@ -792,7 +792,10 @@ const AudioManager = {
 
     init() {
         if (Object.keys(this.sounds).length > 0) {
-            this.startMusic();
+            // Already loaded — just make sure music is playing
+            if (this.currentTrackIdx < 0 || this.tracks[this.currentTrackIdx].paused) {
+                this.startMusic();
+            }
             return;
         }
         this.sounds.pop      = new Audio('audio/pop.mp3');
@@ -802,7 +805,7 @@ const AudioManager = {
         this.sounds.fart.volume     = 0.9;
         this.sounds.chainpop.volume = 0.15;
 
-        // Preload all 3 tracks
+        // Preload all 3 tracks — only once
         this.tracks = [
             new Audio('audio/music.mp3'),
             new Audio('audio/music2.mp3'),
@@ -833,12 +836,16 @@ const AudioManager = {
     },
 
     stopMusic() {
-        if (this.currentTrackIdx < 0) return;
-        const track = this.tracks[this.currentTrackIdx];
-        this._fadeTo(track, 0, 1500, () => {
-            track.pause();
-            track.currentTime = 0;
+        // Stop all tracks to prevent any overlap
+        this.tracks.forEach(t => {
+            if (!t.paused) {
+                this._fadeTo(t, 0, 1500, () => {
+                    t.pause();
+                    t.currentTime = 0;
+                });
+            }
         });
+        this.currentTrackIdx = -1;
     },
 
     _fadeTo(track, targetVol, duration, onDone) {
