@@ -272,7 +272,99 @@
             text-transform: uppercase;
             position: absolute;
             bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
         }
+
+        #credits-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-family: 'Nunito', sans-serif;
+            padding: 4px 8px;
+            z-index: 3;
+            transition: color 0.2s ease;
+        }
+        #credits-button:hover { color: rgba(255,255,255,0.6); }
+
+        #credits-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10,12,20,0.92);
+            backdrop-filter: blur(12px);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 32px;
+            gap: 0;
+        }
+        #credits-overlay.visible { display: flex; }
+
+        .credits-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 28px;
+            letter-spacing: 2px;
+        }
+
+        .credits-section-label {
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.35);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            margin-top: 20px;
+            align-self: flex-start;
+        }
+
+        .credits-entry {
+            align-self: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .credits-entry a {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+            text-decoration: none;
+            font-family: 'Nunito', sans-serif;
+            line-height: 1.6;
+            transition: color 0.2s ease;
+        }
+        .credits-entry a:hover { color: #fff; }
+
+        .credits-entry span {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.8rem;
+            font-family: 'Nunito', sans-serif;
+            display: block;
+            line-height: 1.4;
+        }
+
+        #credits-close {
+            margin-top: 32px;
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.8);
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 10px 36px;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #credits-close:hover { background: rgba(255,255,255,0.2); color: #fff; }
 
         /* ============================================
            GAME OVER SCREEN
@@ -599,6 +691,31 @@
             <div class="color-grid" id="color-grid"></div>
         </div>
         <span class="luna-credit">@lunabellegames</span>
+        <button id="credits-button">Credits</button>
+    </div>
+
+    <!-- CREDITS OVERLAY -->
+    <div id="credits-overlay">
+        <div class="credits-title">Credits</div>
+
+        <div class="credits-section-label">Music</div>
+        <div class="credits-entry">
+            <a href="https://pixabay.com/users/xtremefreddy-32332307/" target="_blank">XtremeFreddy</a>
+            <span>Game Music Loop 1, 3 &amp; 6</span>
+            <span><a href="https://pixabay.com/users/xtremefreddy-32332307/" target="_blank">pixabay.com/users/xtremefreddy-32332307</a></span>
+        </div>
+
+        <div class="credits-section-label">Sound Effects</div>
+        <div class="credits-entry">
+            <span>Pop, chain pop &amp; sound effects via Pixabay</span>
+        </div>
+
+        <div class="credits-section-label">Made by</div>
+        <div class="credits-entry">
+            <a href="#">LunaBelleGames</a>
+        </div>
+
+        <button id="credits-close">Close</button>
     </div>
 
     <!-- GAME OVER SCREEN -->
@@ -668,43 +785,78 @@ const CONFIG = {
 const AudioManager = {
     bgMusic: null,
     sounds: {},
+    tracks: [],
+    currentTrackIdx: -1,
+    targetVolume: 0.55,
+    fadeInterval: null,
 
     init() {
-        // Load all sounds once
         if (Object.keys(this.sounds).length > 0) {
-            // Already loaded — just resume bg music
             this.startMusic();
             return;
         }
-
-        // Preload sound effects
         this.sounds.pop      = new Audio('audio/pop.mp3');
         this.sounds.fart     = new Audio('audio/fart.mp3');
         this.sounds.chainpop = new Audio('audio/chainpop.mp3');
-
-        // Set volumes
         this.sounds.pop.volume      = 0.7;
         this.sounds.fart.volume     = 0.9;
         this.sounds.chainpop.volume = 0.15;
 
-        // Background music — looping, quiet
-        this.bgMusic = new Audio('audio/music.mp3');
-        this.bgMusic.loop   = true;
-        this.bgMusic.volume = 0.55;
+        // Preload all 3 tracks
+        this.tracks = [
+            new Audio('audio/music.mp3'),
+            new Audio('audio/music2.mp3'),
+            new Audio('audio/music3.mp3'),
+        ];
+        this.tracks.forEach(t => { t.loop = true; t.volume = 0; });
 
         this.startMusic();
     },
 
+    pickTrack() {
+        // Pick a random track, avoiding the same one twice in a row
+        let idx;
+        do { idx = Math.floor(Math.random() * this.tracks.length); }
+        while (idx === this.currentTrackIdx && this.tracks.length > 1);
+        return idx;
+    },
+
     startMusic() {
-        if (!this.bgMusic) return;
-        this.bgMusic.currentTime = 0;
-        this.bgMusic.play().catch(() => {}); // catch autoplay policy silently
+        if (!this.tracks.length) return;
+        const idx = this.pickTrack();
+        this.currentTrackIdx = idx;
+        const track = this.tracks[idx];
+        track.currentTime = 0;
+        track.volume = 0;
+        track.play().catch(() => {});
+        this._fadeTo(track, this.targetVolume, 1500);
     },
 
     stopMusic() {
-        if (!this.bgMusic) return;
-        this.bgMusic.pause();
-        this.bgMusic.currentTime = 0;
+        if (this.currentTrackIdx < 0) return;
+        const track = this.tracks[this.currentTrackIdx];
+        this._fadeTo(track, 0, 1500, () => {
+            track.pause();
+            track.currentTime = 0;
+        });
+    },
+
+    _fadeTo(track, targetVol, duration, onDone) {
+        const steps = 30;
+        const interval = duration / steps;
+        const startVol = track.volume;
+        const delta = (targetVol - startVol) / steps;
+        let step = 0;
+        if (this.fadeInterval) clearInterval(this.fadeInterval);
+        this.fadeInterval = setInterval(() => {
+            step++;
+            track.volume = Math.max(0, Math.min(1, startVol + delta * step));
+            if (step >= steps) {
+                clearInterval(this.fadeInterval);
+                this.fadeInterval = null;
+                if (onDone) onDone();
+            }
+        }, interval);
     },
 
     playPop() {
@@ -1365,6 +1517,14 @@ this.streakFlash = document.getElementById('streak-flash');
         // Draw cloud card
 
         // Buttons
+        // Credits
+        document.getElementById('credits-button').addEventListener('click', () => {
+            document.getElementById('credits-overlay').classList.add('visible');
+        });
+        document.getElementById('credits-close').addEventListener('click', () => {
+            document.getElementById('credits-overlay').classList.remove('visible');
+        });
+
         document.getElementById('play-again-button').addEventListener('click', (e) => {
             e.stopPropagation();
             this.startGame(this.currentScene);
