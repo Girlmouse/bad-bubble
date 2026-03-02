@@ -668,207 +668,43 @@ const CONFIG = {
 const AudioManager = {
     bgMusic: null,
     sounds: {},
-    ambientCtx: null,
-    ambientNodes: [],
 
     init() {
+        // Load all sounds once
         if (Object.keys(this.sounds).length > 0) {
+            // Already loaded — just resume bg music
             this.startMusic();
             return;
         }
+
+        // Preload sound effects
         this.sounds.pop      = new Audio('audio/pop.mp3');
         this.sounds.fart     = new Audio('audio/fart.mp3');
         this.sounds.chainpop = new Audio('audio/chainpop.mp3');
+
+        // Set volumes
         this.sounds.pop.volume      = 0.7;
         this.sounds.fart.volume     = 0.9;
         this.sounds.chainpop.volume = 0.15;
+
+        // Background music — looping, quiet
         this.bgMusic = new Audio('audio/music.mp3');
         this.bgMusic.loop   = true;
         this.bgMusic.volume = 0.55;
+
         this.startMusic();
     },
 
     startMusic() {
         if (!this.bgMusic) return;
         this.bgMusic.currentTime = 0;
-        this.bgMusic.play().catch(() => {});
+        this.bgMusic.play().catch(() => {}); // catch autoplay policy silently
     },
 
     stopMusic() {
         if (!this.bgMusic) return;
         this.bgMusic.pause();
         this.bgMusic.currentTime = 0;
-    },
-
-    // =====================================================
-    // SCENE AMBIENT — unique synthesized sound per scene
-    // =====================================================
-    startSceneAmbient(sceneId) {
-        this.stopSceneAmbient();
-        try {
-            this.ambientCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const ac = this.ambientCtx;
-            const nodes = [];
-
-            const addOsc = (type, freq, vol, detune = 0) => {
-                const osc  = ac.createOscillator();
-                const gain = ac.createGain();
-                osc.type = type;
-                osc.frequency.value = freq;
-                osc.detune.value = detune;
-                gain.gain.value = 0;
-                gain.gain.linearRampToValueAtTime(vol, ac.currentTime + 2.5);
-                osc.connect(gain); gain.connect(ac.destination);
-                osc.start();
-                nodes.push({ osc, gain });
-                return { osc, gain };
-            };
-
-            const addNoise = (vol, filterFreq, filterType = 'lowpass') => {
-                const bufSize = ac.sampleRate * 3;
-                const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
-                const data = buf.getChannelData(0);
-                for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
-                const src = ac.createBufferSource();
-                src.buffer = buf; src.loop = true;
-                const filter = ac.createBiquadFilter();
-                filter.type = filterType; filter.frequency.value = filterFreq;
-                const gain = ac.createGain();
-                gain.gain.value = 0;
-                gain.gain.linearRampToValueAtTime(vol, ac.currentTime + 2.5);
-                src.connect(filter); filter.connect(gain); gain.connect(ac.destination);
-                src.start();
-                nodes.push({ osc: src, gain });
-                return { src, gain };
-            };
-
-            // Slow LFO wobble on a node's gain
-            const addLFO = (targetGain, baseVol, depth, rate) => {
-                const lfo  = ac.createOscillator();
-                const lfoG = ac.createGain();
-                lfo.frequency.value = rate;
-                lfoG.gain.value = depth;
-                lfo.connect(lfoG); lfoG.connect(targetGain.gain);
-                lfo.start();
-                nodes.push({ osc: lfo, gain: lfoG });
-            };
-
-            switch(sceneId) {
-                case 'yellow': {
-                    // Bright & airy — high shimmery tones, light flute-like melody
-                    const a = addOsc('sine', 523.25, 0.06);   // C5
-                    const b = addOsc('sine', 659.25, 0.045);  // E5
-                    const c = addOsc('sine', 783.99, 0.03);   // G5
-                    const d = addOsc('triangle', 1046.5, 0.02); // C6 shimmer
-                    addLFO(a.gain, 0.06, 0.025, 0.3);
-                    addLFO(b.gain, 0.045, 0.02, 0.5);
-                    addLFO(d.gain, 0.02, 0.015, 1.1);
-                    addNoise(0.008, 4000, 'highpass'); // airy breath
-                    break;
-                }
-                case 'red': {
-                    // Low moody drone — deep rumble, minor tension
-                    addOsc('sawtooth', 55, 0.025);    // A1 low drone
-                    addOsc('sawtooth', 55.5, 0.022);  // slight detune = beating
-                    addOsc('sine', 82.41, 0.035);     // E2 fifth
-                    addOsc('sine', 110, 0.02);        // A2
-                    addOsc('triangle', 164.81, 0.015); // E3 — haunting overtone
-                    addNoise(0.012, 180, 'lowpass');   // deep rumble
-                    break;
-                }
-                case 'cyan': {
-                    // Watery — flowing, liquid, underwater feel
-                    const a = addOsc('sine', 220, 0.04);
-                    const b = addOsc('sine', 329.63, 0.035);
-                    const c = addOsc('sine', 440, 0.025);
-                    addLFO(a.gain, 0.04, 0.03, 0.18);
-                    addLFO(b.gain, 0.035, 0.025, 0.27);
-                    addLFO(c.gain, 0.025, 0.02, 0.41);
-                    // Pitch wobble for watery shimmer
-                    const pitchLFO = ac.createOscillator();
-                    const pitchG   = ac.createGain();
-                    pitchLFO.frequency.value = 0.6;
-                    pitchG.gain.value = 8;
-                    pitchLFO.connect(pitchG); pitchG.connect(a.osc.frequency);
-                    pitchLFO.start();
-                    nodes.push({ osc: pitchLFO, gain: pitchG });
-                    addNoise(0.018, 600, 'bandpass'); // flowing water texture
-                    break;
-                }
-                case 'green': {
-                    // Forest fresh — natural, earthy, gentle movement
-                    addOsc('sine', 174.61, 0.045);   // F3
-                    addOsc('sine', 261.63, 0.035);   // C4
-                    addOsc('sine', 349.23, 0.025);   // F4
-                    addOsc('triangle', 523.25, 0.018); // C5 leaf shimmer
-                    addNoise(0.015, 800, 'bandpass');  // rustling
-                    addNoise(0.006, 3000, 'highpass'); // breeze
-                    break;
-                }
-                case 'purple': {
-                    // Dreamy & floaty — soft pads, major 7th warmth
-                    const a = addOsc('sine', 196, 0.05);     // G3
-                    const b = addOsc('sine', 246.94, 0.04);  // B3
-                    const c = addOsc('sine', 293.66, 0.035); // D4
-                    const d = addOsc('sine', 369.99, 0.025); // F#4
-                    addLFO(a.gain, 0.05, 0.03, 0.15);
-                    addLFO(c.gain, 0.035, 0.02, 0.22);
-                    addLFO(d.gain, 0.025, 0.018, 0.35);
-                    addNoise(0.006, 1200, 'bandpass');
-                    break;
-                }
-                case 'violet': {
-                    // Deep space — low sub bass, slow pulses, mysterious
-                    addOsc('sine', 40, 0.055);        // sub bass
-                    addOsc('sine', 60, 0.03);         // fifth
-                    addOsc('sine', 80, 0.02);
-                    const pulse = addOsc('triangle', 120, 0.015);
-                    addLFO(pulse.gain, 0.015, 0.012, 0.08); // very slow pulse
-                    addNoise(0.02, 100, 'lowpass');   // deep space rumble
-                    break;
-                }
-                case 'orange': {
-                    // Warm & crackling — fire energy, mid-range warmth
-                    addOsc('sawtooth', 110, 0.025);
-                    addOsc('sawtooth', 165, 0.02);
-                    addOsc('square', 220, 0.012);
-                    addOsc('sine', 330, 0.025);
-                    addNoise(0.02, 400, 'bandpass');  // crackle texture
-                    addNoise(0.008, 150, 'lowpass');  // warm bass rumble
-                    break;
-                }
-                case 'black': {
-                    // Noir — almost silence, faint low hum, tension
-                    addOsc('sine', 36.71, 0.03);      // D1 — barely there
-                    addOsc('sine', 55, 0.015);
-                    addNoise(0.008, 120, 'lowpass');  // barely audible rumble
-                    break;
-                }
-            }
-
-            this.ambientNodes = nodes;
-        } catch(e) { console.warn('Ambient audio failed:', e); }
-    },
-
-    stopSceneAmbient() {
-        if (this.ambientNodes.length > 0) {
-            const ac = this.ambientCtx;
-            this.ambientNodes.forEach(({ osc, gain }) => {
-                try {
-                    if (gain && ac) {
-                        gain.gain.linearRampToValueAtTime(0, ac.currentTime + 0.8);
-                    }
-                    setTimeout(() => { try { osc.stop(); } catch(e) {} }, 900);
-                } catch(e) {}
-            });
-            this.ambientNodes = [];
-        }
-        if (this.ambientCtx) {
-            setTimeout(() => {
-                try { this.ambientCtx.close(); } catch(e) {}
-                this.ambientCtx = null;
-            }, 1000);
-        }
     },
 
     playPop() {
@@ -1589,7 +1425,6 @@ this.streakFlash = document.getElementById('streak-flash');
         this.cleanup();
         this.currentScene = scene;
         AudioManager.init();
-        AudioManager.stopMusic();
 
         this.state = GameState.PLAYING;
         this.score = 0;
@@ -1614,7 +1449,6 @@ this.streakFlash = document.getElementById('streak-flash');
 
         // Start scene renderer
         SceneRenderer.init(this.sceneCanvas, scene.color, scene.dark);
-        AudioManager.startSceneAmbient(scene.id);
         LightningRenderer.init(this.lightningCanvas, scene.color);
 
         this.updatePlayAreaRect();
@@ -2010,8 +1844,6 @@ this.streakFlash = document.getElementById('streak-flash');
         if (this.animationId) { cancelAnimationFrame(this.animationId); this.animationId = null; }
         this.respawnTimeouts.forEach(t => clearTimeout(t));
         this.respawnTimeouts = [];
-        AudioManager.stopSceneAmbient();
-        AudioManager.startMusic();
 
         if (this.score > this.bestScore) {
             this.bestScore = this.score;
@@ -2064,8 +1896,6 @@ this.streakFlash = document.getElementById('streak-flash');
 
     goHome() {
         EndBubbles.stop();
-        AudioManager.stopSceneAmbient();
-        AudioManager.startMusic();
         this.cleanup();
         this.buildColorGrid(); // refresh so new bests and unlocks show
         this.state = GameState.MENU;
