@@ -1594,7 +1594,8 @@ this.streakFlash = document.getElementById('streak-flash');
         this.cleanup();
         this.currentScene = scene;
         AudioManager.init();
-        AudioManager.startSceneMusic();
+        // Small delay so the fade-out of menu track has time to register
+        setTimeout(() => AudioManager.startSceneMusic(), 50);
 
         this.state = GameState.PLAYING;
         this.score = 0;
@@ -2053,6 +2054,7 @@ this.streakFlash = document.getElementById('streak-flash');
         this.scoreDisplay.style.display = 'none';
         this.exitButton.style.display = 'none';
         this.timerRing.style.display = 'none';
+        this.startScreen.style.display = 'none'; // make sure menu is hidden
 
         // Start floating bubbles behind card
         const endCanvas = document.getElementById('end-bubbles-canvas');
@@ -2067,13 +2069,21 @@ this.streakFlash = document.getElementById('streak-flash');
 
     goHome() {
         EndBubbles.stop();
+        AudioManager.startMusic();
         this.cleanup();
-        this.buildColorGrid(); // refresh so new bests and unlocks show
+        this.buildColorGrid();
         this.state = GameState.MENU;
+
+        // Hide everything first, then show start screen cleanly
         this.gameOverScreen.classList.remove('visible');
         this.gameOverScreen.style.display = 'none';
+        this.gameOverScreen.style.background = '';
         this.scoreDisplay.style.display = 'none';
         this.exitButton.style.display = 'none';
+        this.timerRing.style.display = 'none';
+        this.streakFlash && (this.streakFlash.style.opacity = '0');
+        document.getElementById('typewriter-overlay').classList.remove('visible');
+
         this.startScreen.style.display = 'flex';
         this.gameContainer.style.background = BG_COLOR;
         MenuBubbles.start();
