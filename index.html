@@ -236,6 +236,13 @@
             border: 3px solid transparent;
             transition: all 0.2s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.08);
+            animation: circlePulse 3s ease-in-out infinite;
+            animation-delay: var(--pulse-delay, 0s);
+        }
+
+        @keyframes circlePulse {
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(1.07); }
         }
 
         .color-circle.is-dark {
@@ -416,11 +423,156 @@
             transition: all 0.2s ease;
         }
         #exit-button:hover { background: rgba(0,0,0,0.7); color: #fff; }
+
+
+        .combo-float {
+            position: absolute;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.1rem;
+            font-weight: 900;
+            pointer-events: none;
+            z-index: 12;
+            animation: comboRise 0.9s ease-out forwards;
+        }
+
+        @keyframes comboRise {
+            0%   { transform: translateY(0) scale(0.6); opacity: 1; }
+            30%  { transform: translateY(-18px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-55px) scale(0.9); opacity: 0; }
+        }
+
+        /* Score bounce */
+        @keyframes scoreBounce {
+            0%   { transform: scale(1); }
+            30%  { transform: scale(1.5); }
+            60%  { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .score-bounce { animation: scoreBounce 0.35s ease-out; }
+
+        /* Screen shake */
+        @keyframes screenShake {
+            0%   { transform: translate(0,0) rotate(0); }
+            15%  { transform: translate(-6px, 3px) rotate(-0.5deg); }
+            30%  { transform: translate(5px, -4px) rotate(0.4deg); }
+            45%  { transform: translate(-4px, 2px) rotate(-0.3deg); }
+            60%  { transform: translate(3px, -2px) rotate(0.2deg); }
+            75%  { transform: translate(-2px, 1px) rotate(-0.1deg); }
+            100% { transform: translate(0,0) rotate(0); }
+        }
+        .shake { animation: screenShake 0.5s ease-out; }
+
+        /* Timer ring */
+        #timer-ring {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            width: 60px;
+            height: 60px;
+            pointer-events: none;
+            z-index: 11;
+            display: none;
+        }
+
+        /* Color best scores on main screen */
+        .color-best {
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.6);
+            font-family: 'Fredoka One', cursive;
+            min-height: 12px;
+        }
+
+        /* Locked scene */
+        .color-circle.locked {
+            filter: grayscale(0.7) brightness(0.5);
+            position: relative;
+        }
+        .lock-icon {
+            font-size: 1.1rem;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .color-option-wrap {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        /* Typewriter + bubble dissolve */
+        #typewriter-overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            pointer-events: none;
+            flex-direction: column;
+        }
+
+        #typewriter-overlay.visible {
+            display: flex;
+        }
+
+        #typewriter-text {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.7rem;
+            color: rgba(255,255,255,0.92);
+            text-align: center;
+            text-shadow: 0 0 24px rgba(255,255,255,0.3);
+            letter-spacing: 3px;
+            padding: 0 32px;
+            transition: opacity 0.4s ease;
+        }
+
+        .text-bubble {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: textBubbleRise var(--dur) ease-out forwards;
+        }
+
+        @keyframes textBubbleRise {
+            0%   { transform: translate(0, 0) scale(0.3); opacity: 0.9; }
+            20%  { opacity: 1; transform: translate(var(--dx1), -20px) scale(1); }
+            100% { transform: translate(var(--dx2), -180px) scale(0.5); opacity: 0; }
+        }
+
+        /* Typewriter flash overlay */
+        #streak-flash {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 8;
+            opacity: 0;
+            border-radius: 28px;
+            transition: opacity 0.1s ease;
+        }
     </style>
 </head>
 <body>
 <div id="game-container">
     <div id="score-display">0</div>
+    <div id="streak-flash"></div>
+    <div id="typewriter-overlay">
+        <div id="typewriter-text"></div>
+    </div>
+    <div id="timer-ring">
+        <svg width="60" height="60" viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="28" fill="#0e1828"/>
+            <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+            <circle id="timer-arc" cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.8)"
+                stroke-width="3.5" stroke-linecap="round"
+                stroke-dasharray="163" stroke-dashoffset="163"
+                transform="rotate(-90 30 30)"/>
+            <text id="pop-count-text" x="30" y="35" text-anchor="middle"
+                font-family="'Fredoka One', cursive" font-size="16" fill="white">0</text>
+        </svg>
+    </div>
     <div id="play-area"></div>
     <canvas id="scene-canvas"></canvas>
     <canvas id="lightning-canvas"></canvas>
@@ -453,6 +605,9 @@
                         <span class="score-label">Best</span>
                         <span class="score-value" id="best-score">0</span>
                     </div>
+                </div>
+                <div id="streak-record" style="font-family:'Fredoka One',cursive;font-size:0.85rem;color:#7a5a3a;margin-top:6px;display:none;">
+                    🔥 Best streak: <span id="streak-record-val">0</span>
                 </div>
             </div>
         </div>
@@ -1092,6 +1247,11 @@ const Game = {
     badBubbleId: null,
     score: 0,
     bestScore: 0,
+    colorBests: {},       // per-color best scores
+    streak: 0,            // current pop streak
+    bestStreak: 0,        // best streak this round
+    lastPopTime: 0,       // for streak timing
+    STREAK_WINDOW: 1200,  // ms between pops to count as streak
     popsSinceReassign: 0,
     animationId: null,
     respawnTimeouts: [],
@@ -1109,8 +1269,15 @@ const Game = {
         this.sceneCanvas = document.getElementById('scene-canvas');
         this.lightningCanvas = document.getElementById('lightning-canvas');
         this.exitButton = document.getElementById('exit-button');
+this.streakFlash = document.getElementById('streak-flash');
+        this.timerRing = document.getElementById('timer-ring');
+        this.timerArc = document.getElementById('timer-arc');
 
         this.bestScore = parseInt(localStorage.getItem('badBubbleBest')) || 0;
+        // Load per-color bests
+        SCENES.forEach(s => {
+            this.colorBests[s.id] = parseInt(localStorage.getItem('bb_best_' + s.id)) || 0;
+        });
 
         // Build color grid
         this.buildColorGrid();
@@ -1146,14 +1313,26 @@ const Game = {
 
     buildColorGrid() {
         const grid = document.getElementById('color-grid');
-        SCENES.forEach(scene => {
+        grid.innerHTML = '';
+        SCENES.forEach((scene, i) => {
+            const best = this.colorBests[scene.id] || 0;
+            // First 4 scenes always unlocked; rest unlock at score 5 in any color
+            const totalBest = parseInt(localStorage.getItem('badBubbleBest')) || 0;
+            const locked = i >= 4 && totalBest < 5;
+
             const opt = document.createElement('div');
             opt.className = 'color-option';
+            opt.style.cursor = locked ? 'not-allowed' : 'pointer';
             opt.innerHTML = `
-                <div class="color-circle ${scene.id === 'black' ? 'is-dark' : ''}" style="background: ${scene.color};"></div>
-                <span class="color-name">${scene.name}</span>
+                <div class="color-option-wrap">
+                    <div class="color-circle ${scene.id === 'black' ? 'is-dark' : ''} ${locked ? 'locked' : ''}" style="--pulse-delay: ${(i * 0.18).toFixed(2)}s; background: ${scene.color}; position:relative;">
+                        ${locked ? '<span class="lock-icon">🔒</span>' : ''}
+                    </div>
+                    <span class="color-name">${scene.name}</span>
+                    <span class="color-best">${best > 0 ? '★ ' + best : ''}</span>
+                </div>
             `;
-            opt.addEventListener('click', () => this.startGame(scene));
+            if (!locked) opt.addEventListener('click', () => this.startGame(scene));
             grid.appendChild(opt);
         });
     },
@@ -1179,6 +1358,10 @@ const Game = {
 
         this.state = GameState.PLAYING;
         this.score = 0;
+        this.streak = 0;
+        this.bestStreak = 0;
+        this.lastPopTime = 0;
+        this.timerLastTick = performance.now();
         this.badBubbleId = null;
         this.popsSinceReassign = 0;
 
@@ -1192,6 +1375,7 @@ const Game = {
         this.gameOverScreen.classList.remove('visible');
         this.gameOverScreen.style.display = 'none';
         this.exitButton.style.display = 'block';
+        this.timerRing.style.display = 'block';
 
         // Start scene renderer
         SceneRenderer.init(this.sceneCanvas, scene.color, scene.dark);
@@ -1329,9 +1513,30 @@ const Game = {
 
     handleNormalBubble(bubble, index) {
         AudioManager.playPop();
-        this.score++;
+        const now = performance.now();
+
+        // === STREAK ===
+        if (now - this.lastPopTime < this.STREAK_WINDOW) {
+            this.streak++;
+        } else {
+            this.streak = 1;
+        }
+        this.lastPopTime = now;
+        if (this.streak > this.bestStreak) this.bestStreak = this.streak;
+
+        // Bonus points on streak
+        const bonus = this.streak >= 5 ? 3 : this.streak >= 3 ? 2 : 1;
+        this.score += bonus;
         this.popsSinceReassign++;
         this.scoreDisplay.textContent = this.score;
+
+        // Score bounce animation
+        this.scoreDisplay.classList.remove('score-bounce');
+        void this.scoreDisplay.offsetWidth; // reflow
+        this.scoreDisplay.classList.add('score-bounce');
+
+        // Floating +1 / +2 / +3 combo label
+        this.createComboFloat(bubble.x + bubble.size/2, bubble.y, bonus, this.currentScene.color);
 
         // Splat effect
         this.createSplat(bubble.x + bubble.size/2, bubble.y + bubble.size/2, this.currentScene.color);
@@ -1344,12 +1549,10 @@ const Game = {
         const timeout = setTimeout(() => {
             if (this.state === GameState.PLAYING) {
                 const newId = this.createBubble(true, false, this.currentScene.color);
-                // If bad bubble was popped (shouldn't happen) reassign to new
                 if (newId && !this.bubbles.find(b => b.id === this.badBubbleId)) {
                     this.badBubbleId = newId;
                     this.popsSinceReassign = 0;
                 }
-                // Reassign bad bubble every 6 pops so it can't hide forever
                 if (this.popsSinceReassign >= 6) {
                     this.assignBadBubble();
                     this.popsSinceReassign = 0;
@@ -1359,6 +1562,19 @@ const Game = {
         this.respawnTimeouts.push(timeout);
     },
 
+    createComboFloat(x, y, bonus, color) {
+        const el = document.createElement('div');
+        el.className = 'combo-float';
+        el.textContent = '+1';
+        el.style.left = (x - 16) + 'px';
+        el.style.top = (y - 10) + 'px';
+        el.style.color = '#ffffff';
+        el.style.textShadow = '0 0 6px rgba(255,255,255,0.5)';
+        el.style.fontSize = '1rem';
+        this.playArea.appendChild(el);
+        setTimeout(() => { if (el.parentNode) el.remove(); }, 900);
+    },
+
     handleBadBubble(bubble) {
         this.state = GameState.CHAIN_REACTION;
 
@@ -1366,7 +1582,11 @@ const Game = {
         const cy = bubble.y + bubble.size/2;
         const el = bubble.element;
 
-        // STEP 1: Big splat explosion + shockwave ring + grow effect on bad bubble
+        // STEP 1: Screen shake + big splat + shockwave
+        this.gameContainer.classList.remove('shake');
+        void this.gameContainer.offsetWidth;
+        this.gameContainer.classList.add('shake');
+        setTimeout(() => this.gameContainer.classList.remove('shake'), 500);
         this.createSplat(cx, cy, '#ffffff');
         this.createSplat(cx, cy, this.currentScene.color);
 
@@ -1382,8 +1602,8 @@ const Game = {
 
         el.style.transition = 'transform 0.35s ease-out, box-shadow 0.35s ease-out, background 0.2s ease';
         el.style.transform = 'scale(2.2)';
-        el.style.background = 'radial-gradient(circle, #ffffff 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.3) 100%)';
-        el.style.boxShadow = '0 0 60px #fff, 0 0 120px rgba(255,255,255,0.6), 0 0 200px rgba(255,255,255,0.3)';
+        el.style.background = `radial-gradient(circle, #ffffff 0%, ${this.currentScene.color}cc 40%, ${this.currentScene.color}44 100%)`;
+        el.style.boxShadow = `0 0 60px ${this.currentScene.color}, 0 0 120px ${this.currentScene.color}88`;
         el.style.zIndex = '15';
 
         // STEP 2: Fart sound plays with the explosion
@@ -1423,9 +1643,13 @@ const Game = {
 
                 this.bubbles = [];
 
-                // STEP 6: Wait for all pops + 2s pause then show game over
-                const totalTime = remaining.length * 80 + 400 + 2000;
-                setTimeout(() => this.showGameOver(), totalTime);
+                // STEP 6: After all pops, typewriter message then game over
+                const totalTime = remaining.length * 80 + 400;
+                setTimeout(() => {
+                    this.showTypewriter('Bubbles will be back!', () => {
+                        this.showGameOver();
+                    });
+                }, totalTime);
             }, 400);
 
         }, 700);
@@ -1459,6 +1683,91 @@ const Game = {
         }
     },
 
+    showTypewriter(message, callback) {
+        const overlay = document.getElementById('typewriter-overlay');
+        const textEl = document.getElementById('typewriter-text');
+        const color = this.currentScene ? this.currentScene.color : '#ffffff';
+        overlay.classList.add('visible');
+        textEl.style.opacity = '1';
+        textEl.textContent = '';
+
+        // Type out letter by letter
+        let i = 0;
+        const typeSpeed = 68;
+        const type = () => {
+            if (i < message.length) {
+                textEl.textContent += message[i];
+                i++;
+                setTimeout(type, typeSpeed);
+            }
+        };
+        type();
+
+        const typeDuration = message.length * typeSpeed + 100;
+
+        // Linger after typing completes
+        setTimeout(() => {
+            const lingerMs = 1200;
+
+            // After linger, fade text out while spawning bubbles
+            setTimeout(() => {
+                textEl.style.opacity = '0';
+
+                // Spawn bubbles across where text was centered
+                const containerRect = this.gameContainer.getBoundingClientRect();
+                const overlayRect = overlay.getBoundingClientRect();
+                const centerX = overlay.offsetWidth / 2;
+                const centerY = overlay.offsetHeight / 2;
+
+                const bubbleCount = 28;
+                for (let b = 0; b < bubbleCount; b++) {
+                    const bel = document.createElement('div');
+                    bel.className = 'text-bubble';
+                    const size = 6 + Math.random() * 16;
+                    const spread = 160;
+                    const startX = centerX + (Math.random() - 0.5) * spread - size/2;
+                    const startY = centerY + (Math.random() - 0.5) * 24 - size/2;
+                    const dx1 = (Math.random() - 0.5) * 40;
+                    const dx2 = (Math.random() - 0.5) * 80;
+                    const dur = 0.8 + Math.random() * 0.7;
+                    const delay = Math.random() * 0.25;
+
+                    // Bubble style — scene color with highlight
+                    const r = parseInt(color.slice(1,3), 16);
+                    const g = parseInt(color.slice(3,5), 16);
+                    const bv = parseInt(color.slice(5,7), 16);
+
+                    bel.style.cssText = `
+                        left: ${startX}px;
+                        top: ${startY}px;
+                        width: ${size}px;
+                        height: ${size}px;
+                        background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.7), rgba(${r},${g},${bv},0.9) 60%);
+                        box-shadow: 0 0 ${size*0.4}px rgba(${r},${g},${bv},0.5);
+                        --dx1: ${dx1}px;
+                        --dx2: ${dx2}px;
+                        --dur: ${dur}s;
+                        animation-delay: ${delay}s;
+                        opacity: 0;
+                    `;
+                    overlay.appendChild(bel);
+                    setTimeout(() => { if (bel.parentNode) bel.remove(); }, (dur + delay + 0.1) * 1000);
+                }
+
+                // After bubbles finish rising, cut to end screen
+                setTimeout(() => {
+                    overlay.classList.remove('visible');
+                    textEl.style.opacity = '1';
+                    // clear any leftover bubble els
+                    overlay.querySelectorAll('.text-bubble').forEach(b => b.remove());
+                    if (callback) callback();
+                }, 1100);
+
+            }, lingerMs);
+
+        }, typeDuration);
+    },
+
     showGameOver() {
         this.state = GameState.GAME_OVER;
         if (this.animationId) { cancelAnimationFrame(this.animationId); this.animationId = null; }
@@ -1474,6 +1783,7 @@ const Game = {
         this.bestScoreEl.textContent = this.bestScore;
         this.scoreDisplay.style.display = 'none';
         this.exitButton.style.display = 'none';
+        this.timerRing.style.display = 'none';
 
         this.gameOverScreen.style.display = 'flex';
         requestAnimationFrame(() => this.gameOverScreen.classList.add('visible'));
@@ -1481,6 +1791,7 @@ const Game = {
 
     goHome() {
         this.cleanup();
+        this.buildColorGrid(); // refresh so new bests and unlocks show
         this.state = GameState.MENU;
         this.gameOverScreen.classList.remove('visible');
         this.gameOverScreen.style.display = 'none';
@@ -1515,6 +1826,28 @@ const Game = {
             const maxX = this.playAreaRect.width;
             const maxY = this.playAreaRect.height * 0.70; // stay above cloud
 
+            // === POP COUNTER RING — fills every 10 pops, changes color ===
+            if (this.timerArc) {
+                const popInCycle = this.score % 10;
+                const pct = popInCycle / 10;
+                const circumference = 163;
+                this.timerArc.setAttribute('stroke-dashoffset', circumference * (1 - pct));
+                // Color changes by decade: 0-9 white, 10-19 cyan, 20-29 green, 30-39 yellow, 40-49 orange, 50+ red/gold
+                const decade = Math.floor(this.score / 10);
+                const ringColors = ['rgba(255,255,255,0.85)', '#0cc0df', '#7ed957', '#fcd831', '#f35329', '#f60000', '#cb6ce6', '#5e17eb'];
+                const ringColor = ringColors[Math.min(decade, ringColors.length - 1)];
+                this.timerArc.setAttribute('stroke', ringColor);
+                // Update count text
+                const countText = document.getElementById('pop-count-text');
+                if (countText) {
+                    countText.textContent = this.score;
+                    countText.setAttribute('fill', 'white');
+                }
+            }
+
+            // === DIFFICULTY RAMP — speed up gently over time ===
+            const speedMult = 1 + Math.min(this.score * 0.012, 0.8);
+
             this.bubbles.forEach(b => {
                 b.wobbleOffset += CONFIG.WOBBLE_SPEED * dt;
                 b.dirTimer += dt;
@@ -1535,8 +1868,8 @@ const Game = {
                 }
 
                 // Apply velocity + gentle float + wobble
-                b.x += b.vx * dt;
-                b.y += b.vy * dt;
+                b.x += b.vx * speedMult * dt;
+                b.y += b.vy * speedMult * dt;
                 b.x += Math.sin(b.wobbleOffset) * 0.3 * dt;
 
                 // Dampen over time so they don't accelerate forever
@@ -1556,10 +1889,25 @@ const Game = {
                 }
             }
 
-            // Clamp again after collision pushes
+            // Clamp after collision + keep bubbles out of counter zone (top-right)
+            const counterX = maxX - 74; // counter is 60px wide + 14px margin
+            const counterY = 70;        // counter is 60px tall + 10px margin
             this.bubbles.forEach(b => {
                 b.x = Math.max(0, Math.min(b.x, maxX - b.size));
                 b.y = Math.max(0, Math.min(b.y, maxY - b.size));
+                // Push bubble out of counter zone
+                if (b.x + b.size > counterX && b.y < counterY) {
+                    // Decide whether to push left or down based on which is closer
+                    const pushLeft = (b.x + b.size - counterX);
+                    const pushDown = (counterY - b.y);
+                    if (pushLeft < pushDown) {
+                        b.x = counterX - b.size;
+                        b.vx = Math.min(b.vx, -0.2);
+                    } else {
+                        b.y = counterY;
+                        b.vy = Math.max(b.vy, 0.2);
+                    }
+                }
                 b.element.style.left = b.x + 'px';
                 b.element.style.top = b.y + 'px';
             });
