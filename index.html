@@ -788,6 +788,8 @@ const AudioManager = {
     menuTrack: null,
     bubblesTrack: null,
 
+    unlocked: false,
+    unlocking: null,
     // Volume constants
     MENU_MUSIC_VOL:   0.55,  // music.mp3 on menu/end screens
     SCENE_BUBBLES_VOL: 0.42, // bubbles.mp3 during gameplay
@@ -797,11 +799,14 @@ const AudioManager = {
     FADE_MUSIC:   1500,
     FADE_BUBBLES: 1500,
 
-    // Called once on first user gesture
-    setup() {
-        if (this.ready) return;
-        this.ready = true;
+    // Called on user gesture to "unlock" audio on mobile browsers / webviews.
+// Safe to call repeatedly; it will retry if the initial attempt was blocked.
+setup() {
+    if (this.unlocked) return Promise.resolve(true);
+    if (this.unlocking) return this.unlocking;
 
+    // Create audio objects once
+    if (!this.menuTrack || !this.bubblesTrack) {
         // Sound effects
         this.sounds.pop      = new Audio('audio/pop.mp3');
         this.sounds.fart     = new Audio('audio/fart.mp3');
@@ -820,31 +825,59 @@ const AudioManager = {
         this.bubblesTrack.loop = true;
         this.bubblesTrack.volume = 0;
 
-        // Start both tracks — bubbles always running, just volume-controlled
-        // Chain the second play after first to stay within gesture context on mobile
-        const p1 = this.menuTrack.play().catch(() => {});
-        const p2 = this.bubblesTrack.play().catch(() => {});
-        Promise.all([p1, p2]).then(() => {
+        // Helps iOS/Android treat this as "music" and avoid weird routing.
+        // Not supported everywhere, so guard it.
+        try { this.menuTrack.preload = 'auto'; this.bubblesTrack.preload = 'auto'; } catch (e) {}
+    }
+
+    // Attempt to start both tracks inside the current gesture context.
+    // If blocked, we keep unlocked=false so a later tap can retry.
+    this.unlocking = (async () => {
+        try {
+            await this.menuTrack.play();
+            await this.bubblesTrack.play();
+
+            this.unlocked = true;
+            this.ready = true; // keep legacy flag for the rest of the code
+
+            // Default to menu volumes after unlock
             this._fadeTo(this.menuTrack,    this.MENU_MUSIC_VOL,   this.FADE_MUSIC);
             this._fadeTo(this.bubblesTrack, this.MENU_BUBBLES_VOL, this.FADE_BUBBLES);
-        });
-    },
+            return true;
+        } catch (e) {
+            this.unlocked = false;
+            this.ready = false;
+            console.warn('Audio unlock failed (will retry on next tap):', e);
+            return false;
+        } finally {
+            this.unlocking = null;
+        }
+    })();
+
+    return this.unlocking;
+},
 
     // Also kept for compatibility
     init() { this.setup(); },
 
     // Call when returning to menu or end screen
     startMusic() {
-        if (!this.ready) return;
-        this._fadeTo(this.menuTrack,   this.MENU_MUSIC_VOL,  this.FADE_MUSIC);
-        this._fadeTo(this.bubblesTrack, this.MENU_BUBBLES_VOL, this.FADE_BUBBLES);
+        // Try to unlock if needed; then apply volumes.
+        this.setup().then((ok) => {
+            if (!ok) return;
+            this._fadeTo(this.menuTrack,    this.MENU_MUSIC_VOL,   this.FADE_MUSIC);
+            this._fadeTo(this.bubblesTrack, this.MENU_BUBBLES_VOL, this.FADE_BUBBLES);
+        });
     },
 
     // Call when entering a scene
     startSceneMusic() {
-        if (!this.ready) return;
-        this._fadeTo(this.menuTrack,   0,                    this.FADE_MUSIC);
-        this._fadeTo(this.bubblesTrack, this.SCENE_BUBBLES_VOL, this.FADE_BUBBLES);
+        // Try to unlock if needed; then apply volumes.
+        this.setup().then((ok) => {
+            if (!ok) return;
+            this._fadeTo(this.menuTrack,    0,                   this.FADE_MUSIC);
+            this._fadeTo(this.bubblesTrack, this.SCENE_BUBBLES_VOL, this.FADE_BUBBLES);
+        });
     },
 
     // Graceful stop (not really used in normal flow but kept for safety)
@@ -1595,10 +1628,10 @@ this.streakFlash = document.getElementById('streak-flash');
         LightningRenderer.stop();
     },
 
-    startGame(scene) {
+    async startGame(scene) {
         this.cleanup();
         this.currentScene = scene;
-        AudioManager.init();
+        await AudioManager.setup();
         AudioManager.startSceneMusic();
 
         this.state = GameState.PLAYING;
