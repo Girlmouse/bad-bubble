@@ -1595,7 +1595,7 @@ this.streakFlash = document.getElementById('streak-flash');
         if (this.streak > this.bestStreak) this.bestStreak = this.streak;
 
         // Bonus points on streak
-        const bonus = this.streak >= 5 ? 3 : this.streak >= 3 ? 2 : 1;
+        const bonus = 1;
         this.score += bonus;
         this.popsSinceReassign++;
         this.scoreDisplay.textContent = this.score;
