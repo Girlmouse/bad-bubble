@@ -786,12 +786,18 @@ const AudioManager = {
     sounds: {},
     ready: false,          // true after first user gesture
     menuTrack: null,
-    sceneLoops: [],
-    lastSceneIdx: -1,
-    current: null,         // currently playing Audio element
-    VOL: 0.55,
+    bubblesTrack: null,
 
-    // Called once on first touch anywhere — sets up and starts menu music
+    // Volume constants
+    MENU_MUSIC_VOL:   0.55,  // music.mp3 on menu/end screens
+    SCENE_BUBBLES_VOL: 0.42, // bubbles.mp3 during gameplay
+    MENU_BUBBLES_VOL:  0.07, // bubbles.mp3 barely audible on menu/end
+
+    // Fade durations (ms)
+    FADE_MUSIC:   1500,
+    FADE_BUBBLES: 1500,
+
+    // Called once on first user gesture
     setup() {
         if (this.ready) return;
         this.ready = true;
@@ -804,65 +810,63 @@ const AudioManager = {
         this.sounds.fart.volume     = 0.9;
         this.sounds.chainpop.volume = 0.15;
 
-        // Music tracks
+        // Music track (menu + end screens)
         this.menuTrack = new Audio('audio/music.mp3');
         this.menuTrack.loop = true;
+        this.menuTrack.volume = 0;
 
-        this.sceneLoops = [
-            new Audio('audio/music2.mp3'),
-            new Audio('audio/music3.mp3'),
-        ];
-        this.sceneLoops.forEach(t => { t.loop = true; });
+        // Bubbles track (all screens, always looping — just changes volume)
+        this.bubblesTrack = new Audio('audio/bubbles.mp3');
+        this.bubblesTrack.loop = true;
+        this.bubblesTrack.volume = 0;
 
-        this._play(this.menuTrack);
+        // Start both — bubbles always running in background
+        this.menuTrack.play().catch(() => {});
+        this.bubblesTrack.play().catch(() => {});
+
+        // Fade in for menu state
+        this._fadeTo(this.menuTrack,   this.MENU_MUSIC_VOL,  this.FADE_MUSIC);
+        this._fadeTo(this.bubblesTrack, this.MENU_BUBBLES_VOL, this.FADE_BUBBLES);
     },
 
-    // Also kept for compatibility — same as setup
+    // Also kept for compatibility
     init() { this.setup(); },
 
-    // Switch to a new track — fade out old, fade in new
-    _play(track) {
-        if (this.current && this.current !== track) {
-            const old = this.current;
-            this._fadeTo(old, 0, 1000, () => { old.pause(); old.currentTime = 0; });
-        }
-        this.current = track;
-        track.volume = 0;
-        track.currentTime = 0;
-        track.play().catch(() => {});
-        this._fadeTo(track, this.VOL, 1200);
-    },
-
+    // Call when returning to menu or end screen
     startMusic() {
         if (!this.ready) return;
-        this._play(this.menuTrack);
+        this._fadeTo(this.menuTrack,   this.MENU_MUSIC_VOL,  this.FADE_MUSIC);
+        this._fadeTo(this.bubblesTrack, this.MENU_BUBBLES_VOL, this.FADE_BUBBLES);
     },
 
-    stopMusic() {
-        if (!this.ready || !this.current) return;
-        const old = this.current;
-        this.current = null;
-        this._fadeTo(old, 0, 800, () => { old.pause(); old.currentTime = 0; });
-    },
-
+    // Call when entering a scene
     startSceneMusic() {
         if (!this.ready) return;
-        // Strictly alternate between music2 and music3
-        this.lastSceneIdx = this.lastSceneIdx === 0 ? 1 : 0;
-        this._play(this.sceneLoops[this.lastSceneIdx]);
+        this._fadeTo(this.menuTrack,   0,                    this.FADE_MUSIC);
+        this._fadeTo(this.bubblesTrack, this.SCENE_BUBBLES_VOL, this.FADE_BUBBLES);
+    },
+
+    // Graceful stop (not really used in normal flow but kept for safety)
+    stopMusic() {
+        if (!this.ready) return;
+        this._fadeTo(this.menuTrack,   0, this.FADE_MUSIC);
+        this._fadeTo(this.bubblesTrack, 0, this.FADE_BUBBLES);
     },
 
     _fadeTo(track, targetVol, duration, onDone) {
-        const steps = 20;
+        // Clear any existing fade on this track
+        if (track._fadeTimer) clearInterval(track._fadeTimer);
+        const steps = 30;
         const ms = duration / steps;
         const start = track.volume;
         const delta = (targetVol - start) / steps;
         let step = 0;
-        const timer = setInterval(() => {
+        track._fadeTimer = setInterval(() => {
             step++;
             track.volume = Math.max(0, Math.min(1, start + delta * step));
             if (step >= steps) {
-                clearInterval(timer);
+                clearInterval(track._fadeTimer);
+                track._fadeTimer = null;
                 if (onDone) onDone();
             }
         }, ms);
