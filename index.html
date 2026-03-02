@@ -783,21 +783,21 @@ const CONFIG = {
    AUDIO
 ============================================ */
 const AudioManager = {
-    bgMusic: null,
     sounds: {},
-    tracks: [],
-    currentTrackIdx: -1,
-    targetVolume: 0.55,
-    fadeInterval: null,
+    menuTrack: null,
+    sceneTrack: null,
+    lastSceneTrackIdx: -1, // track which scene loop played last
+    MENU_VOL: 0.55,
+    SCENE_VOL: 0.55,
+    _fadeTimer: null,
 
     init() {
-        if (Object.keys(this.sounds).length > 0) {
-            // Already loaded — just make sure music is playing
-            if (this.currentTrackIdx < 0 || this.tracks[this.currentTrackIdx].paused) {
-                this.startMusic();
-            }
+        if (this.menuTrack) {
+            // Already set up — just resume menu music
+            this._playTrack(this.menuTrack, this.MENU_VOL);
             return;
         }
+        // Sound effects
         this.sounds.pop      = new Audio('audio/pop.mp3');
         this.sounds.fart     = new Audio('audio/fart.mp3');
         this.sounds.chainpop = new Audio('audio/chainpop.mp3');
@@ -805,65 +805,65 @@ const AudioManager = {
         this.sounds.fart.volume     = 0.9;
         this.sounds.chainpop.volume = 0.15;
 
-        // Preload all 3 tracks — only once
-        this.tracks = [
-            new Audio('audio/music.mp3'),
+        // Menu track — always music.mp3
+        this.menuTrack = new Audio('audio/music.mp3');
+        this.menuTrack.loop = true;
+        this.menuTrack.volume = 0;
+
+        // Two scene loop tracks
+        this.sceneLoops = [
             new Audio('audio/music2.mp3'),
             new Audio('audio/music3.mp3'),
         ];
-        this.tracks.forEach(t => { t.loop = true; t.volume = 0; });
+        this.sceneLoops.forEach(t => { t.loop = true; t.volume = 0; });
 
-        this.startMusic();
+        this._playTrack(this.menuTrack, this.MENU_VOL);
     },
 
-    pickTrack() {
-        // Pick a random track, avoiding the same one twice in a row
-        let idx;
-        do { idx = Math.floor(Math.random() * this.tracks.length); }
-        while (idx === this.currentTrackIdx && this.tracks.length > 1);
-        return idx;
+    // Fade in a track, fade out all others
+    _playTrack(target, vol) {
+        if (this._fadeTimer) { clearInterval(this._fadeTimer); this._fadeTimer = null; }
+        const all = [this.menuTrack, ...this.sceneLoops].filter(Boolean);
+        all.forEach(t => {
+            if (t === target) {
+                if (t.paused) { t.currentTime = 0; t.play().catch(() => {}); }
+                this._fadeTo(t, vol, 1500);
+            } else {
+                this._fadeTo(t, 0, 1200, () => { t.pause(); t.currentTime = 0; });
+            }
+        });
     },
 
     startMusic() {
-        if (!this.tracks.length) return;
-        const idx = this.pickTrack();
-        this.currentTrackIdx = idx;
-        const track = this.tracks[idx];
-        track.currentTime = 0;
-        track.volume = 0;
-        track.play().catch(() => {});
-        this._fadeTo(track, this.targetVolume, 1500);
+        this._playTrack(this.menuTrack, this.MENU_VOL);
     },
 
     stopMusic() {
-        // Stop all tracks to prevent any overlap
-        this.tracks.forEach(t => {
-            if (!t.paused) {
-                this._fadeTo(t, 0, 1500, () => {
-                    t.pause();
-                    t.currentTime = 0;
-                });
-            }
-        });
-        this.currentTrackIdx = -1;
+        const all = [this.menuTrack, ...this.sceneLoops].filter(Boolean);
+        all.forEach(t => this._fadeTo(t, 0, 1200, () => { t.pause(); t.currentTime = 0; }));
+    },
+
+    startSceneMusic() {
+        // Alternate between the two scene loops
+        const nextIdx = this.lastSceneTrackIdx === 0 ? 1 : 0;
+        this.lastSceneTrackIdx = nextIdx;
+        this._playTrack(this.sceneLoops[nextIdx], this.SCENE_VOL);
     },
 
     _fadeTo(track, targetVol, duration, onDone) {
-        const steps = 30;
-        const interval = duration / steps;
-        const startVol = track.volume;
-        const delta = (targetVol - startVol) / steps;
+        const steps = 25;
+        const ms = duration / steps;
+        const start = track.volume;
+        const delta = (targetVol - start) / steps;
         let step = 0;
-        if (this.fadeInterval) clearInterval(this.fadeInterval);
-        this.fadeInterval = setInterval(() => {
+        const timer = setInterval(() => {
             step++;
-            track.volume = Math.max(0, Math.min(1, startVol + delta * step));
+            track.volume = Math.max(0, Math.min(1, start + delta * step));
             if (step >= steps) {
-                clearInterval(this.fadeInterval);
-                this.fadeInterval = null;
+                clearInterval(timer);
                 if (onDone) onDone();
             }
-        }, interval);
+        }, ms);
     },
 
     playPop() {
@@ -1592,6 +1592,7 @@ this.streakFlash = document.getElementById('streak-flash');
         this.cleanup();
         this.currentScene = scene;
         AudioManager.init();
+        AudioManager.startSceneMusic();
 
         this.state = GameState.PLAYING;
         this.score = 0;
@@ -2011,6 +2012,7 @@ this.streakFlash = document.getElementById('streak-flash');
         if (this.animationId) { cancelAnimationFrame(this.animationId); this.animationId = null; }
         this.respawnTimeouts.forEach(t => clearTimeout(t));
         this.respawnTimeouts = [];
+        AudioManager.startMusic();
 
         if (this.score > this.bestScore) {
             this.bestScore = this.score;
