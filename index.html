@@ -519,7 +519,7 @@ const AudioManager = {
         // Set volumes
         this.sounds.pop.volume      = 0.7;
         this.sounds.fart.volume     = 0.9;
-        this.sounds.chainpop.volume = 0.2;
+        this.sounds.chainpop.volume = 0.15;
 
         // Background music — looping, quiet
         this.bgMusic = new Audio('audio/music.mp3');
@@ -558,7 +558,7 @@ const AudioManager = {
     playChainPop() {
         if (!this.sounds.chainpop) return;
         const s = this.sounds.chainpop.cloneNode();
-        s.volume = 0.2;
+        s.volume = 0.15;
         s.play().catch(() => {});
     }
 };
@@ -1412,9 +1412,10 @@ const Game = {
             // STEP 5: Chain pop cascade after brief lightning pause
             const remaining = [...this.bubbles];
             setTimeout(() => {
+                // Play chainpop sound once for the whole cascade, not per bubble
+                AudioManager.playChainPop();
                 remaining.forEach((b, i) => {
                     setTimeout(() => {
-                        AudioManager.playChainPop();
                         this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
                         b.element.classList.add('chain-pop');
                     }, i * 80);
