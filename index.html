@@ -767,7 +767,7 @@ const BG_COLOR = '#0e1828';
    CONFIG
 ============================================ */
 const CONFIG = {
-    BUBBLE_COUNT: 15,
+    BUBBLE_COUNT: 20,
     BUBBLE_SIZE_MIN: 38,
     BUBBLE_SIZE_MAX: 56,
     RESPAWN_DELAY: 800,
@@ -1794,10 +1794,7 @@ this.streakFlash = document.getElementById('streak-flash');
                     this.badBubbleId = newId;
                     this.popsSinceReassign = 0;
                 }
-                if (this.popsSinceReassign >= 6) {
-                    this.assignBadBubble();
-                    this.popsSinceReassign = 0;
-                }
+                
             }
         }, CONFIG.RESPAWN_DELAY);
         this.respawnTimeouts.push(timeout);
