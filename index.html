@@ -1092,6 +1092,7 @@ const Game = {
     badBubbleId: null,
     score: 0,
     bestScore: 0,
+    popsSinceReassign: 0,
     animationId: null,
     respawnTimeouts: [],
     playAreaRect: null,
@@ -1179,6 +1180,7 @@ const Game = {
         this.state = GameState.PLAYING;
         this.score = 0;
         this.badBubbleId = null;
+        this.popsSinceReassign = 0;
 
         // Update background
         this.gameContainer.style.background = BG_COLOR;
@@ -1253,7 +1255,20 @@ const Game = {
         el.style.boxShadow = `0 0 16px rgba(${r},${g},${b},0.4), 0 4px 12px rgba(0,0,0,0.3), inset 0 0 12px rgba(255,255,255,0.1)`;
         el.style.border = `1.5px solid rgba(255,255,255,0.25)`;
 
-        const pos = this.findNonOverlappingPosition(size);
+        // Spawn position: bottom (lava area) for respawns, random for initial placement
+        const spawnFromBottom = delayed && !initialPlacement;
+        let pos;
+        if (spawnFromBottom) {
+            // Start just above the lava, random X
+            const rect = this.playAreaRect;
+            pos = {
+                x: Math.random() * (rect.width - size),
+                y: rect.height * 0.68 - size  // just above lava
+            };
+        } else {
+            pos = this.findNonOverlappingPosition(size);
+        }
+
         el.style.left = pos.x + 'px';
         el.style.top = pos.y + 'px';
 
@@ -1261,7 +1276,10 @@ const Game = {
             id, element: el,
             x: pos.x, y: pos.y, size,
             wobbleOffset: Math.random() * Math.PI * 2,
-            vx: 0, vy: 0
+            vx: (Math.random() - 0.5) * 0.8,
+            vy: -(0.1 + Math.random() * 0.3), // start drifting upward gently
+            dirTimer: Math.random() * 180,     // ticks until next direction nudge
+            dirInterval: 120 + Math.random() * 180, // how often direction changes
         };
 
         const handleClick = (e) => {
@@ -1272,14 +1290,15 @@ const Game = {
         el.addEventListener('touchend', handleClick, { passive: false });
 
         if (delayed) {
+            // Spawn small from lava, grow as it rises
             el.style.opacity = '0';
-            el.style.transform = 'scale(0.3)';
+            el.style.transform = 'scale(0.2)';
             this.playArea.appendChild(el);
             requestAnimationFrame(() => {
-                el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
                 el.style.opacity = '1';
                 el.style.transform = 'scale(1)';
-                setTimeout(() => { el.style.transition = 'transform 0.1s ease-out'; }, 400);
+                setTimeout(() => { el.style.transition = 'transform 0.1s ease-out'; }, 500);
             });
         } else {
             this.playArea.appendChild(el);
@@ -1311,6 +1330,7 @@ const Game = {
     handleNormalBubble(bubble, index) {
         AudioManager.playPop();
         this.score++;
+        this.popsSinceReassign++;
         this.scoreDisplay.textContent = this.score;
 
         // Splat effect
@@ -1324,8 +1344,15 @@ const Game = {
         const timeout = setTimeout(() => {
             if (this.state === GameState.PLAYING) {
                 const newId = this.createBubble(true, false, this.currentScene.color);
+                // If bad bubble was popped (shouldn't happen) reassign to new
                 if (newId && !this.bubbles.find(b => b.id === this.badBubbleId)) {
                     this.badBubbleId = newId;
+                    this.popsSinceReassign = 0;
+                }
+                // Reassign bad bubble every 6 pops so it can't hide forever
+                if (this.popsSinceReassign >= 6) {
+                    this.assignBadBubble();
+                    this.popsSinceReassign = 0;
                 }
             }
         }, CONFIG.RESPAWN_DELAY);
@@ -1488,28 +1515,37 @@ const Game = {
 
             this.bubbles.forEach(b => {
                 b.wobbleOffset += CONFIG.WOBBLE_SPEED * dt;
-                b.y -= CONFIG.FLOAT_SPEED * dt;
-                b.x += Math.sin(b.wobbleOffset) * CONFIG.WOBBLE_AMOUNT * dt;
+                b.dirTimer += dt;
 
-                const isBad = b.id === this.badBubbleId;
-
-                if (isBad) {
-                    // Bad bubble strictly contained at all times
-                    b.x = Math.max(0, Math.min(b.x, maxX - b.size));
-                    if (b.y < 10) b.y = 10;
-                    if (b.y > maxY - b.size) b.y = maxY - b.size;
-                } else {
-                    // Regular bubbles wrap at top, allowed slight horizontal drift
-                    if (b.y < -b.size) {
-                        b.y = maxY - b.size * 0.5;
-                        b.x = Math.random() * (maxX - b.size);
+                // Periodically nudge in a new random direction
+                if (b.dirTimer >= b.dirInterval) {
+                    b.dirTimer = 0;
+                    b.dirInterval = 120 + Math.random() * 200;
+                    b.vx += (Math.random() - 0.5) * 1.2;
+                    b.vy += (Math.random() - 0.5) * 1.2;
+                    // Clamp speed so they don't go crazy
+                    const speed = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+                    const maxSpeed = 0.9;
+                    if (speed > maxSpeed) {
+                        b.vx = (b.vx / speed) * maxSpeed;
+                        b.vy = (b.vy / speed) * maxSpeed;
                     }
-                    // Allow drifting a little off sides (up to half bubble width)
-                    // but not fully disappearing
-                    const margin = b.size * 0.5;
-                    b.x = Math.max(-margin, Math.min(b.x, maxX - b.size + margin));
-                    if (b.y > maxY - b.size) b.y = maxY - b.size;
                 }
+
+                // Apply velocity + gentle float + wobble
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+                b.x += Math.sin(b.wobbleOffset) * 0.3 * dt;
+
+                // Dampen over time so they don't accelerate forever
+                b.vx *= 0.995;
+                b.vy *= 0.995;
+
+                // Bounce off walls — flip velocity
+                if (b.x <= 0) { b.x = 0; b.vx = Math.abs(b.vx) * 0.6; }
+                if (b.x >= maxX - b.size) { b.x = maxX - b.size; b.vx = -Math.abs(b.vx) * 0.6; }
+                if (b.y <= 0) { b.y = 0; b.vy = Math.abs(b.vy) * 0.6; }
+                if (b.y >= maxY - b.size) { b.y = maxY - b.size; b.vy = -Math.abs(b.vy) * 0.6; }
             });
 
             for (let i = 0; i < this.bubbles.length; i++) {
@@ -1518,17 +1554,10 @@ const Game = {
                 }
             }
 
-            // Final clamp — bad bubble strictly inside, others softly contained
+            // Clamp again after collision pushes
             this.bubbles.forEach(b => {
-                const isBad = b.id === this.badBubbleId;
-                if (isBad) {
-                    b.x = Math.max(0, Math.min(b.x, maxX - b.size));
-                    b.y = Math.max(10, Math.min(b.y, maxY - b.size));
-                } else {
-                    const margin = b.size * 0.5;
-                    b.x = Math.max(-margin, Math.min(b.x, maxX - b.size + margin));
-                    if (b.y > maxY - b.size) b.y = maxY - b.size;
-                }
+                b.x = Math.max(0, Math.min(b.x, maxX - b.size));
+                b.y = Math.max(0, Math.min(b.y, maxY - b.size));
                 b.element.style.left = b.x + 'px';
                 b.element.style.top = b.y + 'px';
             });
