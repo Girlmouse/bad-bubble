@@ -1856,9 +1856,9 @@ this.streakFlash = document.getElementById('streak-flash');
             el.style.transform = 'scale(1.6)';
         }, 200);
 
-        // STEP 4: After pause, bubble pops and lightning fires
+        // STEP 4: Bad bubble pops, fart blasts all remaining bubbles off screen
         setTimeout(() => {
-            // Pop the bad bubble with splat
+            // Pop the bad bubble
             el.style.transition = 'transform 0.2s ease-in, opacity 0.2s ease-in';
             el.style.transform = 'scale(0)';
             el.style.opacity = '0';
@@ -1867,32 +1867,41 @@ this.streakFlash = document.getElementById('streak-flash');
             const badIdx = this.bubbles.findIndex(b => b.id === bubble.id);
             if (badIdx !== -1) this.bubbles.splice(badIdx, 1);
 
-            // Lightning fires at remaining bubbles
-            const targets = this.bubbles.map(b => ({ x: b.x + b.size/2, y: b.y + b.size/2 }));
-            LightningRenderer.fire(cx, cy, targets);
-
-            // STEP 5: Chain pop cascade after brief lightning pause
+            // STEP 5: Chain explosion — each bubble inflates then bursts like the bad bubble
             const remaining = [...this.bubbles];
-            setTimeout(() => {
-                // Play chainpop sound once for the whole cascade, not per bubble
-                AudioManager.playChainPop();
-                remaining.forEach((b, i) => {
-                    setTimeout(() => {
-                        this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
-                        b.element.classList.add('chain-pop');
-                    }, i * 80);
-                });
+            this.bubbles = [];
 
-                this.bubbles = [];
-
-                // STEP 6: After all pops, typewriter message then game over
-                const totalTime = remaining.length * 80 + 400;
+            remaining.forEach((b, i) => {
                 setTimeout(() => {
-                    this.showTypewriter('Bubbles will be back!', () => {
-                        this.showGameOver();
-                    });
-                }, totalTime);
-            }, 400);
+                    const bel = b.element;
+                    // Inflate
+                    bel.style.transition = 'transform 0.25s ease-out, opacity 0.15s ease-in';
+                    bel.style.transform = 'scale(2.0)';
+                    bel.style.background = `radial-gradient(circle, #ffffff 0%, ${this.currentScene.color}cc 40%, ${this.currentScene.color}44 100%)`;
+                    bel.style.boxShadow = `0 0 40px ${this.currentScene.color}`;
+
+                    // Splat at bubble center
+                    this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
+                    this.createSplat(b.x + b.size/2, b.y + b.size/2, '#ffffff');
+
+                    // Then burst
+                    setTimeout(() => {
+                        bel.style.transition = 'transform 0.15s ease-in, opacity 0.15s ease-in';
+                        bel.style.transform = 'scale(0)';
+                        bel.style.opacity = '0';
+                        setTimeout(() => { if (bel.parentNode) bel.remove(); }, 150);
+                    }, 250);
+
+                }, i * 110); // 110ms between each pop
+            });
+
+            // STEP 6: After chain finishes, typewriter then game over
+            const totalTime = remaining.length * 150 + 500;
+            setTimeout(() => {
+                this.showTypewriter('Bubbles will be back!', () => {
+                    this.showGameOver();
+                });
+            }, totalTime);
 
         }, 700);
     },
