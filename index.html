@@ -519,7 +519,7 @@ const AudioManager = {
         // Set volumes
         this.sounds.pop.volume      = 0.7;
         this.sounds.fart.volume     = 0.9;
-        this.sounds.chainpop.volume = 0.5;
+        this.sounds.chainpop.volume = 0.2;
 
         // Background music — looping, quiet
         this.bgMusic = new Audio('audio/music.mp3');
@@ -558,7 +558,7 @@ const AudioManager = {
     playChainPop() {
         if (!this.sounds.chainpop) return;
         const s = this.sounds.chainpop.cloneNode();
-        s.volume = 0.5;
+        s.volume = 0.2;
         s.play().catch(() => {});
     }
 };
