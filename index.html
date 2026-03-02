@@ -784,19 +784,18 @@ const CONFIG = {
 ============================================ */
 const AudioManager = {
     sounds: {},
+    ready: false,          // true after first user gesture
     menuTrack: null,
-    sceneTrack: null,
-    lastSceneTrackIdx: -1, // track which scene loop played last
-    MENU_VOL: 0.55,
-    SCENE_VOL: 0.55,
-    _fadeTimer: null,
+    sceneLoops: [],
+    lastSceneIdx: -1,
+    current: null,         // currently playing Audio element
+    VOL: 0.55,
 
-    init() {
-        if (this.menuTrack) {
-            // Already set up — just resume menu music
-            this._playTrack(this.menuTrack, this.MENU_VOL);
-            return;
-        }
+    // Called once on first touch anywhere — sets up and starts menu music
+    setup() {
+        if (this.ready) return;
+        this.ready = true;
+
         // Sound effects
         this.sounds.pop      = new Audio('audio/pop.mp3');
         this.sounds.fart     = new Audio('audio/fart.mp3');
@@ -805,53 +804,56 @@ const AudioManager = {
         this.sounds.fart.volume     = 0.9;
         this.sounds.chainpop.volume = 0.15;
 
-        // Menu track — always music.mp3
+        // Music tracks
         this.menuTrack = new Audio('audio/music.mp3');
         this.menuTrack.loop = true;
-        this.menuTrack.volume = 0;
 
-        // Two scene loop tracks
         this.sceneLoops = [
             new Audio('audio/music2.mp3'),
             new Audio('audio/music3.mp3'),
         ];
-        this.sceneLoops.forEach(t => { t.loop = true; t.volume = 0; });
+        this.sceneLoops.forEach(t => { t.loop = true; });
 
-        this._playTrack(this.menuTrack, this.MENU_VOL);
+        this._play(this.menuTrack);
     },
 
-    // Fade in a track, fade out all others
-    _playTrack(target, vol) {
-        if (this._fadeTimer) { clearInterval(this._fadeTimer); this._fadeTimer = null; }
-        const all = [this.menuTrack, ...this.sceneLoops].filter(Boolean);
-        all.forEach(t => {
-            if (t === target) {
-                if (t.paused) { t.currentTime = 0; t.play().catch(() => {}); }
-                this._fadeTo(t, vol, 1500);
-            } else {
-                this._fadeTo(t, 0, 1200, () => { t.pause(); t.currentTime = 0; });
-            }
-        });
+    // Also kept for compatibility — same as setup
+    init() { this.setup(); },
+
+    // Switch to a new track — fade out old, fade in new
+    _play(track) {
+        if (this.current && this.current !== track) {
+            const old = this.current;
+            this._fadeTo(old, 0, 1000, () => { old.pause(); old.currentTime = 0; });
+        }
+        this.current = track;
+        track.volume = 0;
+        track.currentTime = 0;
+        track.play().catch(() => {});
+        this._fadeTo(track, this.VOL, 1200);
     },
 
     startMusic() {
-        this._playTrack(this.menuTrack, this.MENU_VOL);
+        if (!this.ready) return;
+        this._play(this.menuTrack);
     },
 
     stopMusic() {
-        const all = [this.menuTrack, ...this.sceneLoops].filter(Boolean);
-        all.forEach(t => this._fadeTo(t, 0, 1200, () => { t.pause(); t.currentTime = 0; }));
+        if (!this.ready || !this.current) return;
+        const old = this.current;
+        this.current = null;
+        this._fadeTo(old, 0, 800, () => { old.pause(); old.currentTime = 0; });
     },
 
     startSceneMusic() {
-        // Alternate between the two scene loops
-        const nextIdx = this.lastSceneTrackIdx === 0 ? 1 : 0;
-        this.lastSceneTrackIdx = nextIdx;
-        this._playTrack(this.sceneLoops[nextIdx], this.SCENE_VOL);
+        if (!this.ready) return;
+        // Strictly alternate between music2 and music3
+        this.lastSceneIdx = this.lastSceneIdx === 0 ? 1 : 0;
+        this._play(this.sceneLoops[this.lastSceneIdx]);
     },
 
     _fadeTo(track, targetVol, duration, onDone) {
-        const steps = 25;
+        const steps = 20;
         const ms = duration / steps;
         const start = track.volume;
         const delta = (targetVol - start) / steps;
@@ -2193,7 +2195,18 @@ this.streakFlash = document.getElementById('streak-flash');
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => Game.init());
+document.addEventListener('DOMContentLoaded', () => {
+    Game.init();
+
+    // Start audio on very first touch/click anywhere — handles autoplay policy
+    const startAudio = () => {
+        AudioManager.setup();
+        document.removeEventListener('touchstart', startAudio);
+        document.removeEventListener('mousedown', startAudio);
+    };
+    document.addEventListener('touchstart', startAudio, { once: true });
+    document.addEventListener('mousedown', startAudio, { once: true });
+});
 </script>
 </body>
 </html>
