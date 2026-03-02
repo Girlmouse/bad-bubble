@@ -1510,6 +1510,7 @@ const Game = {
             const dt = Math.min((currentTime - lastTime) / 16, 3);
             lastTime = currentTime;
 
+            this.updatePlayAreaRect(); // refresh every frame for accurate mobile dims
             const maxX = this.playAreaRect.width;
             const maxY = this.playAreaRect.height * 0.70; // stay above cloud
 
