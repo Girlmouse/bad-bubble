@@ -484,10 +484,10 @@ const BG_COLOR = '#0e1828';
    CONFIG
 ============================================ */
 const CONFIG = {
-    BUBBLE_COUNT: 10,
+    BUBBLE_COUNT: 15,
     BUBBLE_SIZE_MIN: 38,
     BUBBLE_SIZE_MAX: 56,
-    RESPAWN_DELAY: 2000,
+    RESPAWN_DELAY: 800,
     BAD_BUBBLE_DELAY: 150,
     FLOAT_SPEED: 0.22,
     WOBBLE_AMOUNT: 0.55,
@@ -524,7 +524,7 @@ const AudioManager = {
         // Background music — looping, quiet
         this.bgMusic = new Audio('audio/music.mp3');
         this.bgMusic.loop   = true;
-        this.bgMusic.volume = 0.25;
+        this.bgMusic.volume = 0.55;
 
         this.startMusic();
     },
