@@ -283,19 +283,27 @@
             width: 100%; height: 100%;
             display: none;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: center;
             align-items: center;
-            padding-top: 60px;
-            background: rgba(0,0,0,0.55);
-            backdrop-filter: blur(10px);
+            padding-top: 0;
             z-index: 100;
             opacity: 0;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.6s ease, background 0.6s ease;
+            overflow: hidden;
         }
 
         #game-over-screen.visible {
             display: flex;
             opacity: 1;
+        }
+
+        /* Floating bubbles canvas behind card */
+        #end-bubbles-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .cloud-card {
@@ -308,12 +316,12 @@
             justify-content: center;
             padding: 44px 28px 32px;
             margin-bottom: 28px;
-        }
-
-        .cloud-card canvas {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            z-index: 2;
+            border-radius: 28px;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(18px);
+            border: 1.5px solid rgba(255,255,255,0.25);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.1);
         }
 
         .cloud-card-content {
@@ -328,11 +336,12 @@
         .game-over-title {
             font-family: 'Fredoka One', cursive;
             font-size: 1.5rem;
-            color: #3a2a1a;
+            color: #ffffff;
             text-align: center;
             line-height: 1.25;
             margin-bottom: 20px;
-            text-shadow: 0 1px 2px rgba(255,255,255,0.4);
+            text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            letter-spacing: 1px;
         }
 
         .score-row {
@@ -350,7 +359,7 @@
 
         .score-label {
             font-size: 0.65rem;
-            color: #8a7060;
+            color: rgba(255,255,255,0.6);
             text-transform: uppercase;
             letter-spacing: 1.5px;
             margin-bottom: 2px;
@@ -360,13 +369,14 @@
         .score-value {
             font-family: 'Fredoka One', cursive;
             font-size: 2.4rem;
-            color: #2a1a0a;
+            color: #ffffff;
             line-height: 1;
+            text-shadow: 0 0 20px rgba(255,255,255,0.4);
         }
 
         .score-item.best .score-value {
             font-size: 1.8rem;
-            color: #5a3a20;
+            color: rgba(255,255,255,0.75);
         }
 
         .button-group {
@@ -395,9 +405,10 @@
         }
 
         .game-button.secondary {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.12);
             color: rgba(255,255,255,0.9);
             border: 1.5px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(8px);
         }
 
         .game-button:hover { transform: scale(1.04); }
@@ -592,8 +603,8 @@
 
     <!-- GAME OVER SCREEN -->
     <div id="game-over-screen">
+        <canvas id="end-bubbles-canvas"></canvas>
         <div class="cloud-card">
-            <canvas id="cloud-canvas" width="290" height="220"></canvas>
             <div class="cloud-card-content">
                 <div class="game-over-title">Bad Bubble<br>Located</div>
                 <div class="score-row">
@@ -606,12 +617,12 @@
                         <span class="score-value" id="best-score">0</span>
                     </div>
                 </div>
-                <div id="streak-record" style="font-family:'Fredoka One',cursive;font-size:0.85rem;color:#7a5a3a;margin-top:6px;display:none;">
-                    🔥 Best streak: <span id="streak-record-val">0</span>
+                <div id="streak-record" style="font-family:'Fredoka One',cursive;font-size:0.85rem;color:rgba(255,255,255,0.6);margin-top:8px;display:none;">
+                    Best streak: <span id="streak-record-val">0</span>
                 </div>
             </div>
         </div>
-        <div class="button-group">
+        <div class="button-group" style="position:relative;z-index:2;">
             <button class="game-button primary" id="play-again-button">Play Again</button>
             <button class="game-button secondary" id="home-button">Home</button>
         </div>
@@ -715,6 +726,51 @@ const AudioManager = {
         const s = this.sounds.chainpop.cloneNode();
         s.volume = 0.15;
         s.play().catch(() => {});
+    },
+
+    // Synthesized bubbly sound for the typewriter/dissolve moment
+    playBubbly() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const totalDuration = 2.2;
+            const bubbleCount = 18;
+
+            for (let i = 0; i < bubbleCount; i++) {
+                const delay = i * (totalDuration / bubbleCount) * (0.7 + Math.random() * 0.6);
+                const startFreq = 300 + Math.random() * 500;
+                const endFreq   = startFreq * (1.8 + Math.random() * 1.2);
+
+                setTimeout(() => {
+                    try {
+                        const osc  = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        const filter = ctx.createBiquadFilter();
+
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + 0.12);
+
+                        filter.type = 'bandpass';
+                        filter.frequency.value = startFreq;
+                        filter.Q.value = 4;
+
+                        const vol = 0.06 + Math.random() * 0.06;
+                        gain.gain.setValueAtTime(0, ctx.currentTime);
+                        gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(ctx.destination);
+
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 0.15);
+                    } catch(e) {}
+                }, delay * 1000);
+            }
+            // Auto-close after done
+            setTimeout(() => { try { ctx.close(); } catch(e) {} }, (totalDuration + 0.5) * 1000);
+        } catch(e) {}
     }
 };
 
@@ -1154,77 +1210,92 @@ const MenuBubbles = {
 /* ============================================
    CLOUD CARD RENDERER (end screen)
 ============================================ */
-function drawCloudCard(canvas) {
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
+/* ============================================
+   END SCREEN FLOATING BUBBLES
+============================================ */
+const EndBubbles = {
+    canvas: null, ctx: null, bubbles: [], animId: null, color: '#ffffff',
 
-    const puffs = [
-        { x: W*0.12, y: H*0.52, r: W*0.13 },
-        { x: W*0.28, y: H*0.38, r: W*0.17 },
-        { x: W*0.5,  y: H*0.3,  r: W*0.21 },
-        { x: W*0.72, y: H*0.38, r: W*0.17 },
-        { x: W*0.88, y: H*0.52, r: W*0.13 },
-        { x: W*0.2,  y: H*0.58, r: W*0.15 },
-        { x: W*0.5,  y: H*0.54, r: W*0.18 },
-        { x: W*0.78, y: H*0.56, r: W*0.15 },
-    ];
+    start(canvas, sceneColor) {
+        this.stop();
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.color = sceneColor;
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        this.bubbles = [];
+        for (let i = 0; i < 22; i++) this.addBubble(true);
+        this.animate();
+    },
 
-    const fillY = H * 0.5;
+    stop() {
+        if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
+        this.bubbles = [];
+    },
 
-    // Shadow pass
-    ctx.save();
-    ctx.shadowBlur = 24;
-    ctx.shadowColor = 'rgba(0,0,0,0.25)';
-    ctx.shadowOffsetY = 10;
-    puffs.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = '#ede0cc';
-        ctx.fill();
-    });
-    ctx.restore();
+    addBubble(initial = false) {
+        const W = this.canvas.width, H = this.canvas.height;
+        const size = 10 + Math.random() * 40;
+        this.bubbles.push({
+            x: Math.random() * W,
+            y: initial ? Math.random() * H : H + size,
+            size,
+            speed: 0.18 + Math.random() * 0.35,
+            wobble: Math.random() * Math.PI * 2,
+            wobbleSpeed: 0.008 + Math.random() * 0.012,
+            wobbleAmt: 0.4 + Math.random() * 0.8,
+            opacity: 0.08 + Math.random() * 0.22,
+        });
+    },
 
-    // Puff fill
-    puffs.forEach(p => {
-        const grad = ctx.createRadialGradient(p.x - p.r*0.22, p.y - p.r*0.28, 0, p.x, p.y, p.r);
-        grad.addColorStop(0, '#fdf5e8');
-        grad.addColorStop(0.6, '#f0e0c8');
-        grad.addColorStop(1, '#e2cdb0');
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
-    });
+    animate() {
+        const W = this.canvas.width, H = this.canvas.height;
+        this.ctx.clearRect(0, 0, W, H);
+        const r = parseInt(this.color.slice(1,3), 16);
+        const g = parseInt(this.color.slice(3,5), 16);
+        const b = parseInt(this.color.slice(5,7), 16);
 
-    // Rounded bottom fill
-    const radius = 22;
-    ctx.fillStyle = '#ecdec8';
-    ctx.beginPath();
-    ctx.moveTo(0, fillY);
-    ctx.lineTo(0, H - radius);
-    ctx.arcTo(0, H, radius, H, radius);
-    ctx.lineTo(W - radius, H);
-    ctx.arcTo(W, H, W, H - radius, radius);
-    ctx.lineTo(W, fillY);
-    ctx.closePath();
-    ctx.fill();
+        this.bubbles.forEach((bub, i) => {
+            bub.wobble += bub.wobbleSpeed;
+            bub.y -= bub.speed;
+            bub.x += Math.sin(bub.wobble) * bub.wobbleAmt;
 
-    // Subtle bottom gradient
-    const btmGrad = ctx.createLinearGradient(0, fillY, 0, H);
-    btmGrad.addColorStop(0, 'rgba(240,224,200,0)');
-    btmGrad.addColorStop(1, 'rgba(210,190,160,0.4)');
-    ctx.fillStyle = btmGrad;
-    ctx.beginPath();
-    ctx.moveTo(0, fillY);
-    ctx.lineTo(0, H - radius);
-    ctx.arcTo(0, H, radius, H, radius);
-    ctx.lineTo(W - radius, H);
-    ctx.arcTo(W, H, W, H - radius, radius);
-    ctx.lineTo(W, fillY);
-    ctx.closePath();
-    ctx.fill();
-}
+            if (bub.y < -bub.size * 2) {
+                this.bubbles[i] = {
+                    x: Math.random() * W, y: H + bub.size,
+                    size: 10 + Math.random() * 40,
+                    speed: 0.18 + Math.random() * 0.35,
+                    wobble: Math.random() * Math.PI * 2,
+                    wobbleSpeed: 0.008 + Math.random() * 0.012,
+                    wobbleAmt: 0.4 + Math.random() * 0.8,
+                    opacity: 0.08 + Math.random() * 0.22,
+                };
+                return;
+            }
+
+            this.ctx.save();
+            this.ctx.globalAlpha = bub.opacity;
+            const grad = this.ctx.createRadialGradient(
+                bub.x - bub.size*0.25, bub.y - bub.size*0.25, 0,
+                bub.x, bub.y, bub.size
+            );
+            grad.addColorStop(0, `rgba(255,255,255,0.8)`);
+            grad.addColorStop(0.4, `rgba(${r},${g},${b},0.6)`);
+            grad.addColorStop(1, `rgba(${r},${g},${b},0.1)`);
+            this.ctx.beginPath();
+            this.ctx.arc(bub.x, bub.y, bub.size, 0, Math.PI * 2);
+            this.ctx.fillStyle = grad;
+            this.ctx.fill();
+            // Ring
+            this.ctx.strokeStyle = `rgba(255,255,255,0.2)`;
+            this.ctx.lineWidth = 1;
+            this.ctx.stroke();
+            this.ctx.restore();
+        });
+
+        this.animId = requestAnimationFrame(() => this.animate());
+    }
+};
 
 /* ============================================
    HELPER
@@ -1292,7 +1363,6 @@ this.streakFlash = document.getElementById('streak-flash');
         LightningRenderer.init(this.lightningCanvas, '#fff');
 
         // Draw cloud card
-        drawCloudCard(document.getElementById('cloud-canvas'));
 
         // Buttons
         document.getElementById('play-again-button').addEventListener('click', (e) => {
@@ -1690,6 +1760,7 @@ this.streakFlash = document.getElementById('streak-flash');
         overlay.classList.add('visible');
         textEl.style.opacity = '1';
         textEl.textContent = '';
+        AudioManager.playBubbly();
 
         // Type out letter by letter
         let i = 0;
@@ -1778,6 +1849,33 @@ this.streakFlash = document.getElementById('streak-flash');
             this.bestScore = this.score;
             localStorage.setItem('badBubbleBest', this.bestScore);
         }
+        if (this.currentScene) {
+            const key = 'bb_best_' + this.currentScene.id;
+            const prev = parseInt(localStorage.getItem(key)) || 0;
+            if (this.score > prev) {
+                localStorage.setItem(key, this.score);
+                this.colorBests[this.currentScene.id] = this.score;
+            }
+        }
+
+        // Scene-colored background
+        const color = this.currentScene ? this.currentScene.color : '#5e17eb';
+        const dark  = this.currentScene ? this.currentScene.dark  : '#2d0090';
+        const r = parseInt(color.slice(1,3), 16);
+        const g = parseInt(color.slice(3,5), 16);
+        const b = parseInt(color.slice(5,7), 16);
+        this.gameOverScreen.style.background =
+            `radial-gradient(ellipse at 50% 30%, rgba(${r},${g},${b},0.55) 0%, rgba(${r},${g},${b},0.18) 55%, ${BG_COLOR} 100%)`;
+
+        // Show streak record if notable
+        const streakEl = document.getElementById('streak-record');
+        const streakVal = document.getElementById('streak-record-val');
+        if (this.bestStreak >= 3) {
+            streakEl.style.display = 'block';
+            streakVal.textContent = this.bestStreak;
+        } else {
+            streakEl.style.display = 'none';
+        }
 
         this.finalScoreEl.textContent = this.score;
         this.bestScoreEl.textContent = this.bestScore;
@@ -1785,11 +1883,19 @@ this.streakFlash = document.getElementById('streak-flash');
         this.exitButton.style.display = 'none';
         this.timerRing.style.display = 'none';
 
+        // Start floating bubbles behind card
+        const endCanvas = document.getElementById('end-bubbles-canvas');
         this.gameOverScreen.style.display = 'flex';
-        requestAnimationFrame(() => this.gameOverScreen.classList.add('visible'));
+        requestAnimationFrame(() => {
+            endCanvas.width  = endCanvas.offsetWidth;
+            endCanvas.height = endCanvas.offsetHeight;
+            EndBubbles.start(endCanvas, color);
+            this.gameOverScreen.classList.add('visible');
+        });
     },
 
     goHome() {
+        EndBubbles.stop();
         this.cleanup();
         this.buildColorGrid(); // refresh so new bests and unlocks show
         this.state = GameState.MENU;
