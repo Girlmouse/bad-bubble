@@ -197,11 +197,11 @@
         }
 
         .game-tagline {
-            font-size: 1rem;
+            font-size: 1.15rem;
             color: rgba(255,255,255,0.65);
-            margin-bottom: 44px;
+            margin-bottom: 64px;
             text-align: center;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         .pick-label {
@@ -686,7 +686,7 @@
         <canvas id="menu-bubbles-canvas"></canvas>
         <div class="start-content">
             <h1 class="game-title">Bad Bubble</h1>
-            <p class="game-tagline">There's a bad bubble hiding away,<br>can you find it?</p>
+            <p class="game-tagline">There's a bad bubble hiding away.<br>Save as many bubbles before it finds YOU!</p>
             <p class="pick-label">Pick a color</p>
             <div class="color-grid" id="color-grid"></div>
         </div>
@@ -723,7 +723,6 @@
         <canvas id="end-bubbles-canvas"></canvas>
         <div class="cloud-card">
             <div class="cloud-card-content">
-                <div class="game-over-title">Bad Bubble<br>Located</div>
                 <div class="score-row">
                     <div class="score-item">
                         <span class="score-label">Score</span>
@@ -733,9 +732,6 @@
                         <span class="score-label">Best</span>
                         <span class="score-value" id="best-score">0</span>
                     </div>
-                </div>
-                <div id="streak-record" style="font-family:'Fredoka One',cursive;font-size:0.85rem;color:rgba(255,255,255,0.6);margin-top:8px;display:none;">
-                    Best streak: <span id="streak-record-val">0</span>
                 </div>
             </div>
         </div>
@@ -753,12 +749,12 @@
 const SCENES = [
     { id: 'yellow',  name: 'Yellow',  color: '#fcd831', dark: '#b89a00' },
     { id: 'red',     name: 'Red',     color: '#f60000', dark: '#8a0000' },
-    { id: 'pink',  name: 'Pink',  color: '#cb6ce6', dark: '#7a2a96' },
+    { id: 'pink',    name: 'Pink',    color: '#cb6ce6', dark: '#7a2a96' },
     { id: 'green',   name: 'Green',   color: '#7ed957', dark: '#3a8a1a' },
     { id: 'violet',  name: 'Violet',  color: '#5e17eb', dark: '#2d0090' },
-    { id: 'cyan',    name: 'Cyan',    color: '#0cc0df', dark: '#006a80' },
+    { id: 'blue',    name: 'Blue',    color: '#0cc0df', dark: '#006a80' },
     { id: 'orange',  name: 'Orange',  color: '#f35329', dark: '#8a2000' },
-    { id: 'black',   name: 'Black',   color: '#2a2a2a', dark: '#0a0a0a' },
+    { id: 'rainbow', name: 'Rainbow', color: '#rainbow', dark: '#1a1a2e', isRainbow: true },
 ];
 
 const BG_COLOR = '#0e1828';
@@ -767,7 +763,7 @@ const BG_COLOR = '#0e1828';
    CONFIG
 ============================================ */
 const CONFIG = {
-    BUBBLE_COUNT: 30,
+    BUBBLE_COUNT: 51,
     BUBBLE_SIZE_MIN: 38,
     BUBBLE_SIZE_MAX: 56,
     RESPAWN_DELAY: 800,
@@ -981,15 +977,17 @@ const SceneRenderer = {
     ctx: null,
     color: '#fcd831',
     darkColor: '#b89a00',
+    isRainbow: false,
     animFrame: null,
     time: 0,
     liquidDrops: [],
 
-    init(canvas, color, darkColor) {
+    init(canvas, color, darkColor, isRainbow = false) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.color = color;
         this.darkColor = darkColor;
+        this.isRainbow = isRainbow;
         this.time = 0;
         this.liquidDrops = [];
         this.resize();
@@ -1032,11 +1030,23 @@ const SceneRenderer = {
         const baseY = H * 0.52;
 
         // === THICK LIQUID BASE — lava pool ===
-        const lavaGrad = ctx.createLinearGradient(0, baseY + 15, 0, H);
-        lavaGrad.addColorStop(0, hexToRgba(color, 1.0));
-        lavaGrad.addColorStop(0.2, hexToRgba(color, 0.88));
-        lavaGrad.addColorStop(0.5, hexToRgba(darkColor, 0.95));
-        lavaGrad.addColorStop(1, hexToRgba(darkColor, 1.0));
+        let lavaGrad;
+        if (this.isRainbow) {
+            lavaGrad = ctx.createLinearGradient(0, 0, W, 0); // horizontal rainbow
+            lavaGrad.addColorStop(0,    '#f60000');
+            lavaGrad.addColorStop(0.16, '#f35329');
+            lavaGrad.addColorStop(0.33, '#fcd831');
+            lavaGrad.addColorStop(0.5,  '#7ed957');
+            lavaGrad.addColorStop(0.66, '#0cc0df');
+            lavaGrad.addColorStop(0.83, '#5e17eb');
+            lavaGrad.addColorStop(1,    '#cb6ce6');
+        } else {
+            lavaGrad = ctx.createLinearGradient(0, baseY + 15, 0, H);
+            lavaGrad.addColorStop(0, hexToRgba(color, 1.0));
+            lavaGrad.addColorStop(0.2, hexToRgba(color, 0.88));
+            lavaGrad.addColorStop(0.5, hexToRgba(darkColor, 0.95));
+            lavaGrad.addColorStop(1, hexToRgba(darkColor, 1.0));
+        }
 
         // Undulating lava surface
         ctx.beginPath();
@@ -1602,11 +1612,11 @@ this.streakFlash = document.getElementById('streak-flash');
             opt.style.cursor = locked ? 'not-allowed' : 'pointer';
             opt.innerHTML = `
                 <div class="color-option-wrap">
-                    <div class="color-circle ${scene.id === 'black' ? 'is-dark' : ''} ${locked ? 'locked' : ''}" style="--pulse-delay: ${(i * 0.18).toFixed(2)}s; background: ${scene.color}; position:relative;">
+                    <div class="color-circle ${locked ? 'locked' : ''}" style="--pulse-delay: ${(i * 0.18).toFixed(2)}s; background: ${scene.isRainbow ? 'linear-gradient(180deg, #e40303 0% 16.6%, #ff8c00 16.6% 33.2%, #ffed00 33.2% 49.8%, #008026 49.8% 66.4%, #004dff 66.4% 83%, #750787 83% 100%)' : scene.color}; position:relative;">
                         ${locked ? '<span class="lock-icon">🔒</span>' : ''}
                     </div>
                     <span class="color-name">${scene.name}</span>
-                    <span class="color-best">${best > 0 ? '★ ' + best : ''}</span>
+                    <span class="color-best" style="color: ${scene.isRainbow ? '#ffffff' : scene.color}">${best > 0 ? '★ ' + best : ''}</span>
                 </div>
             `;
             if (!locked) opt.addEventListener('click', () => this.startGame(scene));
@@ -1654,15 +1664,24 @@ this.streakFlash = document.getElementById('streak-flash');
         this.gameOverScreen.style.display = 'none';
         this.exitButton.style.display = 'block';
         this.timerRing.style.display = 'block';
+        const effectiveColor = scene.isRainbow ? '#ffffff' : scene.color;
+        const effectiveDark = scene.isRainbow ? '#2d0090' : scene.dark;
+        const countText = document.getElementById('pop-count-text');
+        if (this.timerArc) {
+            this.timerArc.setAttribute('stroke', effectiveColor);
+            this.timerArc.setAttribute('stroke-dashoffset', '163');
+        }
+        if (countText) { countText.textContent = '0'; countText.setAttribute('fill', effectiveColor); }
 
-        // Start scene renderer
-        SceneRenderer.init(this.sceneCanvas, scene.color, scene.dark);
-        LightningRenderer.init(this.lightningCanvas, scene.color);
+        SceneRenderer.init(this.sceneCanvas, effectiveColor, effectiveDark, scene.isRainbow);
+        LightningRenderer.init(this.lightningCanvas, effectiveColor);
 
-        this.updatePlayAreaRect();
-        this.createInitialBubbles(scene.color);
-        this.assignBadBubble();
-        this.startAnimationLoop();
+        requestAnimationFrame(() => {
+            this.updatePlayAreaRect();
+            this.createInitialBubbles(effectiveColor);
+            this.assignBadBubble();
+            this.startAnimationLoop();
+        });
     },
 
     createInitialBubbles(color) {
@@ -1692,7 +1711,13 @@ this.streakFlash = document.getElementById('streak-flash');
 
     createBubble(delayed = false, initialPlacement = false, color = null) {
         if (this.state !== GameState.PLAYING) return null;
-        const sceneColor = color || this.currentScene?.color || '#fcd831';
+
+        // For rainbow scene, pick a random color from the palette per bubble
+        const RAINBOW_COLORS = ['#fcd831','#f60000','#cb6ce6','#7ed957','#0cc0df','#5e17eb','#f35329'];
+        const isRainbow = this.currentScene?.isRainbow;
+        const sceneColor = isRainbow
+            ? RAINBOW_COLORS[Math.floor(Math.random() * RAINBOW_COLORS.length)]
+            : (color || this.currentScene?.color || '#fcd831');
 
         const el = document.createElement('div');
         el.className = 'bubble';
@@ -1802,18 +1827,16 @@ this.streakFlash = document.getElementById('streak-flash');
         this.lastPopTime = now;
         if (this.streak > this.bestStreak) this.bestStreak = this.streak;
 
-        // Bonus points on streak
         const bonus = 1;
         this.score += bonus;
-        this.popsSinceReassign++;
         this.scoreDisplay.textContent = this.score;
 
         // Score bounce animation
         this.scoreDisplay.classList.remove('score-bounce');
-        void this.scoreDisplay.offsetWidth; // reflow
+        void this.scoreDisplay.offsetWidth;
         this.scoreDisplay.classList.add('score-bounce');
 
-        // Floating +1 / +2 / +3 combo label
+        // Floating +1 label
         this.createComboFloat(bubble.x + bubble.size/2, bubble.y, bonus, this.currentScene.color);
 
         // Splat effect
@@ -1823,18 +1846,7 @@ this.streakFlash = document.getElementById('streak-flash');
         this.bubbles.splice(index, 1);
 
         setTimeout(() => { if (bubble.element.parentNode) bubble.element.remove(); }, 300);
-
-        const timeout = setTimeout(() => {
-            if (this.state === GameState.PLAYING) {
-                const newId = this.createBubble(true, false, this.currentScene.color);
-                if (newId && !this.bubbles.find(b => b.id === this.badBubbleId)) {
-                    this.badBubbleId = newId;
-                    this.popsSinceReassign = 0;
-                }
-                
-            }
-        }, CONFIG.RESPAWN_DELAY);
-        this.respawnTimeouts.push(timeout);
+        // No respawn — minesweeper style
     },
 
     createComboFloat(x, y, bonus, color) {
@@ -1908,28 +1920,27 @@ this.streakFlash = document.getElementById('streak-flash');
                 setTimeout(() => {
                     const bel = b.element;
                     // Inflate
-                    bel.style.transition = 'transform 0.25s ease-out, opacity 0.15s ease-in';
+                    bel.style.transition = 'transform 0.15s ease-out';
                     bel.style.transform = 'scale(2.0)';
                     bel.style.background = `radial-gradient(circle, #ffffff 0%, ${this.currentScene.color}cc 40%, ${this.currentScene.color}44 100%)`;
                     bel.style.boxShadow = `0 0 40px ${this.currentScene.color}`;
 
                     // Splat at bubble center
                     this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
-                    this.createSplat(b.x + b.size/2, b.y + b.size/2, '#ffffff');
 
                     // Then burst
                     setTimeout(() => {
-                        bel.style.transition = 'transform 0.15s ease-in, opacity 0.15s ease-in';
+                        bel.style.transition = 'transform 0.1s ease-in, opacity 0.1s ease-in';
                         bel.style.transform = 'scale(0)';
                         bel.style.opacity = '0';
-                        setTimeout(() => { if (bel.parentNode) bel.remove(); }, 150);
-                    }, 250);
+                        setTimeout(() => { if (bel.parentNode) bel.remove(); }, 100);
+                    }, 150);
 
-                }, i * 110); // 110ms between each pop
+                }, i * 55); // 55ms between each pop
             });
 
             // STEP 6: After chain finishes, typewriter then game over
-            const totalTime = remaining.length * 150 + 500;
+            const totalTime = remaining.length * 55 + 300;
             setTimeout(() => {
                 this.showTypewriter('Bubbles will be back!', () => {
                     this.showGameOver();
@@ -1970,7 +1981,9 @@ this.streakFlash = document.getElementById('streak-flash');
     showTypewriter(message, callback) {
         const overlay = document.getElementById('typewriter-overlay');
         const textEl = document.getElementById('typewriter-text');
-        const color = this.currentScene ? this.currentScene.color : '#ffffff';
+        const RAINBOW_COLORS = ['#fcd831','#f60000','#cb6ce6','#7ed957','#0cc0df','#5e17eb','#f35329'];
+        const isRainbowScene = this.currentScene?.isRainbow;
+        const color = isRainbowScene ? '#cb6ce6' : (this.currentScene ? this.currentScene.color : '#ffffff');
         overlay.classList.add('visible');
         textEl.style.opacity = '1';
         textEl.textContent = '';
@@ -2017,10 +2030,11 @@ this.streakFlash = document.getElementById('streak-flash');
                     const dur = 0.8 + Math.random() * 0.7;
                     const delay = Math.random() * 0.25;
 
-                    // Bubble style — scene color with highlight
-                    const r = parseInt(color.slice(1,3), 16);
-                    const g = parseInt(color.slice(3,5), 16);
-                    const bv = parseInt(color.slice(5,7), 16);
+                    // Bubble style — scene color (or random rainbow color) with highlight
+                    const bubbleColor = isRainbowScene ? RAINBOW_COLORS[Math.floor(Math.random() * RAINBOW_COLORS.length)] : color;
+                    const r = parseInt(bubbleColor.slice(1,3), 16);
+                    const g = parseInt(bubbleColor.slice(3,5), 16);
+                    const bv = parseInt(bubbleColor.slice(5,7), 16);
 
                     bel.style.cssText = `
                         left: ${startX}px;
@@ -2074,8 +2088,8 @@ this.streakFlash = document.getElementById('streak-flash');
         }
 
         // Scene-colored background
-        const color = this.currentScene ? this.currentScene.color : '#5e17eb';
-        const dark  = this.currentScene ? this.currentScene.dark  : '#2d0090';
+        const color = this.currentScene?.isRainbow ? '#cb6ce6' : (this.currentScene?.color || '#5e17eb');
+        const dark  = this.currentScene?.dark || '#2d0090';
         const r = parseInt(color.slice(1,3), 16);
         const g = parseInt(color.slice(3,5), 16);
         const b = parseInt(color.slice(5,7), 16);
@@ -2083,14 +2097,7 @@ this.streakFlash = document.getElementById('streak-flash');
             `radial-gradient(ellipse at 50% 30%, rgba(${r},${g},${b},0.55) 0%, rgba(${r},${g},${b},0.18) 55%, ${BG_COLOR} 100%)`;
 
         // Show streak record if notable
-        const streakEl = document.getElementById('streak-record');
-        const streakVal = document.getElementById('streak-record-val');
-        if (this.bestStreak >= 3) {
-            streakEl.style.display = 'block';
-            streakVal.textContent = this.bestStreak;
-        } else {
-            streakEl.style.display = 'none';
-        }
+
 
         this.finalScoreEl.textContent = this.score;
         this.bestScoreEl.textContent = this.bestScore;
@@ -2158,20 +2165,15 @@ this.streakFlash = document.getElementById('streak-flash');
 
             // === POP COUNTER RING — fills every 10 pops, changes color ===
             if (this.timerArc) {
-                const popInCycle = this.score % 10;
-                const pct = popInCycle / 10;
+                const pct = Math.min(this.score / 50, 1);
                 const circumference = 163;
                 this.timerArc.setAttribute('stroke-dashoffset', circumference * (1 - pct));
-                // Color changes by decade: 0-9 white, 10-19 cyan, 20-29 green, 30-39 yellow, 40-49 orange, 50+ red/gold
-                const decade = Math.floor(this.score / 10);
-                const ringColors = ['rgba(255,255,255,0.85)', '#0cc0df', '#7ed957', '#fcd831', '#f35329', '#f60000', '#cb6ce6', '#5e17eb'];
-                const ringColor = ringColors[Math.min(decade, ringColors.length - 1)];
-                this.timerArc.setAttribute('stroke', ringColor);
-                // Update count text
+                const sceneColor = this.currentScene?.isRainbow ? '#ffffff' : (this.currentScene?.color || '#ffffff');
+                this.timerArc.setAttribute('stroke', sceneColor);
                 const countText = document.getElementById('pop-count-text');
                 if (countText) {
                     countText.textContent = this.score;
-                    countText.setAttribute('fill', 'white');
+                    countText.setAttribute('fill', sceneColor);
                 }
             }
 
@@ -2249,6 +2251,14 @@ this.streakFlash = document.getElementById('streak-flash');
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Clear scores from old respawn-based version
+    if (!localStorage.getItem('bb_v2_cleared')) {
+        localStorage.removeItem('badBubbleBest');
+        ['yellow','red','pink','green','violet','blue','orange','rainbow'].forEach(id => {
+            localStorage.removeItem('bb_best_' + id);
+        });
+        localStorage.setItem('bb_v2_cleared', '1');
+    }
     Game.init();
 
     // Start audio on very first touch/click anywhere — handles autoplay policy
