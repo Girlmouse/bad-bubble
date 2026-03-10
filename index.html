@@ -785,8 +785,8 @@ const CONFIG = {
     BUBBLE_COUNT: 61,
     BUBBLE_SIZE_MIN: 38,
     BUBBLE_SIZE_MAX: 56,
-    RESPAWN_DELAY: 800,
-    BAD_BUBBLE_DELAY: 250,
+    RESPAWN_DELAY: 0,
+    BAD_BUBBLE_DELAY: 0,
     FLOAT_SPEED: 0.22,
     WOBBLE_AMOUNT: 0.55,
     WOBBLE_SPEED: 0.013,
@@ -1697,17 +1697,20 @@ this.streakFlash = document.getElementById('streak-flash');
         const rect   = this.playAreaRect;
         const areaW  = rect.width;
         const areaH  = rect.height * 0.68;
-        const topPad = 90;  // clear counter ring
+        const topPad = 90;
         const pad    = 6;
 
-        // Grid: cell size = max bubble + generous gap so no overlap at spawn
-        const cellSize = CONFIG.BUBBLE_SIZE_MAX + 8;
-        const cols = Math.max(1, Math.floor((areaW - pad * 2) / cellSize));
-        const rows = Math.max(1, Math.floor((areaH - topPad - pad) / cellSize));
-        const cellW = (areaW - pad * 2) / cols;
-        const cellH = (areaH - topPad - pad) / rows;
+        const usableW = areaW - pad * 2;
+        const usableH = areaH - topPad - pad;
 
-        // Shuffle cells so placement is random
+        // Derive cols/rows from aspect ratio so all count bubbles always fit
+        const aspect = usableW / usableH;
+        const cols   = Math.max(1, Math.round(Math.sqrt(count * aspect)));
+        const rows   = Math.max(1, Math.ceil(count / cols));
+        const cellW  = usableW / cols;
+        const cellH  = usableH / rows;
+
+        // Shuffle cell indices for random placement
         const cells = [];
         for (let r = 0; r < rows; r++)
             for (let c = 0; c < cols; c++)
@@ -1717,17 +1720,17 @@ this.streakFlash = document.getElementById('streak-flash');
             [cells[i], cells[j]] = [cells[j], cells[i]];
         }
 
-        for (let i = 0; i < Math.min(count, cells.length); i++) {
-            const cell = cells[i];
+        for (let i = 0; i < count; i++) {
+            const cell = cells[i % cells.length];
             const size = CONFIG.BUBBLE_SIZE_MIN + Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
-            // Small jitter within the cell — but capped so no overlap
-            const maxJitter = (cellSize - size) * 0.35;
+            // Jitter stays within cell bounds so no overlap at spawn
+            const maxJitter = Math.max(0, (Math.min(cellW, cellH) - size) * 0.3);
             const jx = (Math.random() - 0.5) * maxJitter * 2;
             const jy = (Math.random() - 0.5) * maxJitter * 2;
-            const x = pad + cell.c * cellW + (cellW - size) / 2 + jx;
-            const y = topPad + cell.r * cellH + (cellH - size) / 2 + jy;
+            const x  = pad     + cell.c * cellW + (cellW - size) / 2 + jx;
+            const y  = topPad  + cell.r * cellH + (cellH - size) / 2 + jy;
             this._makeBubble(
-                Math.max(pad, Math.min(areaW - size - pad, x)),
+                Math.max(pad,    Math.min(areaW - size - pad, x)),
                 Math.max(topPad, Math.min(areaH - size - pad, y)),
                 size, color
             );
@@ -1780,51 +1783,6 @@ this.streakFlash = document.getElementById('streak-flash');
         this.playArea.appendChild(el);
         this.bubbles.push(bubbleData);
         return id;
-    },
-
-    // Legacy — used for respawn from lava
-    createBubble(delayed = false, initialPlacement = false, color = null) {
-        if (this.state !== GameState.PLAYING) return null;
-        const rect = this.playAreaRect;
-        const size = CONFIG.BUBBLE_SIZE_MIN + Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
-        const x = 6 + Math.random() * (rect.width  - size - 12);
-        const y = initialPlacement
-            ? 90 + Math.random() * (rect.height * 0.68 - 90 - size - 6)
-            : rect.height * 0.68 - size - 4;
-        const id = this._makeBubble(x, y, size, color);
-        if (delayed && id) {
-            const b = this.bubbles.find(b => b.id === id);
-            if (b) {
-                b.element.style.opacity = '0';
-                b.element.style.transform = 'scale(0.2)';
-                requestAnimationFrame(() => {
-                    b.element.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                    b.element.style.opacity = '1';
-                    b.element.style.transform = 'scale(1)';
-                    setTimeout(() => { b.element.style.transition = 'transform 0.1s ease-out'; }, 500);
-                });
-            }
-        }
-        return id;
-    },
-
-    findNonOverlappingPosition(size) {
-        const maxX = this.playAreaRect.width  - size - 4;
-        const maxY = this.playAreaRect.height * 0.68 - size - 4;
-        for (let attempt = 0; attempt < 50; attempt++) {
-            const x = 4 + Math.random() * (maxX - 4);
-            const y = 90 + Math.random() * (maxY - 90);
-            const rv = size / 2;
-            let ok = true;
-            for (const other of this.bubbles) {
-                const or = other.size / 2;
-                const dx = (x + rv) - (other.x + or);
-                const dy = (y + rv) - (other.y + or);
-                if (Math.sqrt(dx * dx + dy * dy) < rv + or + 4) { ok = false; break; }
-            }
-            if (ok) return { x, y };
-        }
-        return { x: 4 + Math.random() * maxX, y: 90 + Math.random() * (maxY - 90) };
     },
 
     assignBadBubble() {
