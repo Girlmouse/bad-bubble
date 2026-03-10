@@ -646,35 +646,19 @@
         }
 
         /* Typewriter flash overlay */
-        #streak-flash {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 8;
-            opacity: 0;
-            border-radius: 28px;
-            transition: opacity 0.1s ease;
-        }
+        #streak-flash { position: absolute; inset: 0; pointer-events: none; z-index: 8; opacity: 0; border-radius: 28px; transition: opacity 0.1s ease; }
 
         #stats-button {
-            position: absolute;
-            bottom: 14px; left: 20px;
-            width: 34px; height: 34px;
-            border-radius: 50%;
-            background:
-                radial-gradient(ellipse 40% 35% at 30% 22%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.15) 45%, transparent 70%),
-                radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.18) 0%, rgba(200,220,255,0.10) 100%);
-            border: 1.5px solid rgba(255,255,255,0.28);
-            box-shadow: 0 0 10px rgba(255,255,255,0.1), 0 3px 8px rgba(0,0,0,0.3), inset 0 0 8px rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.80);
-            font-size: 0.85rem; font-family: 'Fredoka One', cursive;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            z-index: 3; padding: 0; backdrop-filter: blur(4px);
+            position: absolute; bottom: 14px; left: 20px; width: 34px; height: 34px; border-radius: 50%;
+            background: radial-gradient(ellipse 40% 35% at 30% 22%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.15) 45%, transparent 70%), radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.18) 0%, rgba(200,220,255,0.10) 100%);
+            border: 1.5px solid rgba(255,255,255,0.28); box-shadow: 0 0 10px rgba(255,255,255,0.1), 0 3px 8px rgba(0,0,0,0.3), inset 0 0 8px rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.80); font-size: 0.85rem; font-family: 'Fredoka One', cursive;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; padding: 0; backdrop-filter: blur(4px);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
-        #stats-button:hover { transform: scale(1.1); box-shadow: 0 0 16px rgba(255,255,255,0.2), 0 4px 12px rgba(0,0,0,0.35); }
+        #stats-button:hover { transform: scale(1.1); }
         #stats-button:active { transform: scale(0.93); }
-        #stats-overlay { position: absolute; inset: 0; background: rgba(10,12,20,0.92); backdrop-filter: blur(14px); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 32px; gap: 0; }
+        #stats-overlay { position: absolute; inset: 0; background: rgba(10,12,20,0.92); backdrop-filter: blur(14px); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 32px; gap: 0; border-radius: 28px; }
         #stats-overlay.visible { display: flex; }
         .stats-title { font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: rgba(255,255,255,0.9); margin-bottom: 24px; letter-spacing: 2px; }
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; margin-bottom: 6px; }
@@ -730,6 +714,15 @@
         <button id="stats-button">ⓘ</button>
         <button id="credits-button">Credits</button>
     </div>
+    <!-- STATS OVERLAY -->
+    <div id="stats-overlay">
+        <div class="stats-title">Stats</div>
+        <div class="stats-grid" id="stats-summary-grid"></div>
+        <div class="stats-section-label">Best by Color</div>
+        <div id="stats-color-list" style="width:100%"></div>
+        <button class="stats-reset-btn" id="stats-reset-btn">Reset All Scores</button>
+        <button class="stats-close-btn" id="stats-close-btn">Close</button>
+    </div>
     <!-- CREDITS OVERLAY -->
     <div id="credits-overlay">
         <div class="credits-title">Credits</div>
@@ -776,16 +769,8 @@
             <button class="game-button secondary" id="home-button">Home</button>
         </div>
     </div>
-    <!-- STATS OVERLAY -->
-    <div id="stats-overlay">
-        <div class="stats-title">Stats</div>
-        <div class="stats-grid" id="stats-summary-grid"></div>
-        <div class="stats-section-label">Best by Color</div>
-        <div id="stats-color-list" style="width:100%"></div>
-        <button class="stats-reset-btn" id="stats-reset-btn">Reset All Scores</button>
-        <button class="stats-close-btn" id="stats-close-btn">Close</button>
-    </div>
 </div>
+
 <script>
 /* ============================================
    COLOR SCENES
@@ -795,7 +780,7 @@ const SCENES = [
     { id: 'red',     name: 'Red',     color: '#f60000', dark: '#8a0000' },
     { id: 'pink',    name: 'Pink',    color: '#cb6ce6', dark: '#7a2a96' },
     { id: 'green',   name: 'Green',   color: '#7ed957', dark: '#3a8a1a' },
-    { id: 'purple',  name: 'Purple',  color: '#5e17eb', dark: '#2d0090' },
+    { id: 'violet',  name: 'Violet',  color: '#5e17eb', dark: '#2d0090' },
     { id: 'blue',    name: 'Blue',    color: '#0cc0df', dark: '#006a80' },
     { id: 'orange',  name: 'Orange',  color: '#f35329', dark: '#8a2000' },
     { id: 'rainbow', name: 'Rainbow', color: '#rainbow', dark: '#1a1a2e', isRainbow: true },
@@ -1613,7 +1598,7 @@ this.streakFlash = document.getElementById('streak-flash');
     showStats() {
         this.bestScore = parseInt(localStorage.getItem('badBubbleBest')) || 0;
         SCENES.forEach(s => { this.colorBests[s.id] = parseInt(localStorage.getItem('bb_best_' + s.id)) || 0; });
-        const totalPops = parseInt(localStorage.getItem('bb_total_pops')) || 0;
+        const totalPops   = parseInt(localStorage.getItem('bb_total_pops'))   || 0;
         const gamesPlayed = parseInt(localStorage.getItem('bb_games_played')) || 0;
         document.getElementById('stats-summary-grid').innerHTML = `
             <div class="stats-card"><span class="stats-card-label">Best Score</span><span class="stats-card-value">${this.bestScore}</span></div>
@@ -1728,20 +1713,28 @@ this.streakFlash = document.getElementById('streak-flash');
 
     createInitialBubbles(color) {
         const count = CONFIG.BUBBLE_COUNT;
-        const rect = this.playAreaRect;
+        const rect  = this.playAreaRect;
         const areaW = rect.width;
         const areaH = rect.height * 0.68;
+        // Reserve space at top for the counter ring, and a comfortable margin all around
+        const topPad = 84;   // below counter ring
+        const sidePad = 8;
+        const botPad  = 10;
+        const usableW = areaW - sidePad * 2;
+        const usableH = areaH - topPad - botPad;
 
-        const aspect = areaW / areaH;
-        const cols = Math.round(Math.sqrt(count * aspect));
-        const rows = Math.ceil(count / cols);
-        const cellW = areaW / cols;
-        const cellH = areaH / rows;
+        // Grid: fill usable area with shuffled cells so bubbles are spread evenly
+        const aspect = usableW / usableH;
+        const cols   = Math.round(Math.sqrt(count * aspect));
+        const rows   = Math.ceil(count / cols);
+        const cellW  = usableW / cols;
+        const cellH  = usableH / rows;
 
         const cells = [];
         for (let r = 0; r < rows; r++)
             for (let c = 0; c < cols; c++)
                 cells.push({ c, r });
+        // Fisher-Yates shuffle
         for (let i = cells.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [cells[i], cells[j]] = [cells[j], cells[i]];
@@ -1750,20 +1743,20 @@ this.streakFlash = document.getElementById('streak-flash');
         for (let i = 0; i < count; i++) {
             const cell = cells[i % cells.length];
             const size = CONFIG.BUBBLE_SIZE_MIN + Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
-            const jitterX = (Math.random() - 0.5) * cellW * 0.4;
-            const jitterY = (Math.random() - 0.5) * cellH * 0.4;
-            const cx = cell.c * cellW + cellW / 2 + jitterX;
-            const cy = cell.r * cellH + cellH / 2 + jitterY;
-            const ox = Math.max(0, Math.min(areaW - size, cx - size / 2));
-            const oy = Math.max(0, Math.min(areaH - size, cy - size / 2));
-            this._spawnBubbleAt(ox, oy, size, color);
+            const jx   = (Math.random() - 0.5) * cellW * 0.35;
+            const jy   = (Math.random() - 0.5) * cellH * 0.35;
+            const cx   = sidePad + cell.c * cellW + cellW / 2 + jx;
+            const cy   = topPad  + cell.r * cellH + cellH / 2 + jy;
+            const ox   = Math.max(sidePad, Math.min(areaW - sidePad - size, cx - size / 2));
+            const oy   = Math.max(topPad,  Math.min(areaH - botPad - size,  cy - size / 2));
+            this._spawnBubble(ox, oy, size, color);
         }
     },
 
-    _spawnBubbleAt(ox, oy, size, color) {
+    _spawnBubble(ox, oy, size, color) {
         if (this.state !== GameState.PLAYING) return null;
         const RAINBOW_COLORS = ['#fcd831','#f60000','#cb6ce6','#7ed957','#0cc0df','#5e17eb','#f35329'];
-        const isRainbow = this.currentScene?.isRainbow;
+        const isRainbow  = this.currentScene?.isRainbow;
         const sceneColor = isRainbow
             ? RAINBOW_COLORS[Math.floor(Math.random() * RAINBOW_COLORS.length)]
             : (color || this.currentScene?.color || '#fcd831');
@@ -1772,7 +1765,7 @@ this.streakFlash = document.getElementById('streak-flash');
         el.className = 'bubble';
         const id = 'b_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
         el.dataset.id = id;
-        el.style.width = size + 'px';
+        el.style.width  = size + 'px';
         el.style.height = size + 'px';
 
         const r = parseInt(sceneColor.slice(1,3), 16);
@@ -1781,31 +1774,24 @@ this.streakFlash = document.getElementById('streak-flash');
         el.style.background = `
             radial-gradient(ellipse 38% 38% at 28% 22%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 40%, transparent 70%),
             radial-gradient(ellipse 20% 15% at 68% 72%, rgba(255,255,255,0.35) 0%, transparent 60%),
-            radial-gradient(ellipse 100% 100% at 50% 50%, rgba(${r},${g},${b},0.95) 0%, rgba(${Math.max(0,r-40)},${Math.max(0,g-40)},${Math.max(0,b-40)},1) 100%)
-        `;
+            radial-gradient(ellipse 100% 100% at 50% 50%, rgba(${r},${g},${b},0.95) 0%, rgba(${Math.max(0,r-40)},${Math.max(0,g-40)},${Math.max(0,b-40)},1) 100%)`;
         el.style.boxShadow = `0 0 16px rgba(${r},${g},${b},0.4), 0 4px 12px rgba(0,0,0,0.3), inset 0 0 12px rgba(255,255,255,0.1)`;
-        el.style.border = `1.5px solid rgba(255,255,255,0.25)`;
+        el.style.border    = `1.5px solid rgba(255,255,255,0.25)`;
         el.style.left = ox + 'px';
         el.style.top  = oy + 'px';
 
-        // Each bubble drifts on its own independent sine waves — pure airy float
-        // Two layered waves per axis give organic Lissajous-style paths
+        // Each bubble gets its own independent sine-wave parameters → organic, never-syncing float
         const rnd = () => Math.random();
         const bubbleData = {
-            id, element: el,
-            x: ox, y: oy, size,
-            ox, oy,          // origin — sine waves are offsets from here
-            t: rnd() * 100,  // random start time so bubbles are out of phase
-            // X axis: two sine waves
-            fx:  0.6 + rnd() * 0.5,   ax:  8 + rnd() * 10,
-            px:  rnd() * Math.PI * 2,
-            fx2: 1.1 + rnd() * 0.8,   ax2: 4 + rnd() * 6,
-            px2: rnd() * Math.PI * 2,
-            // Y axis: two sine waves (slightly slower for that floating-upward feel)
-            fy:  0.5 + rnd() * 0.4,   ay:  7 + rnd() * 9,
-            py:  rnd() * Math.PI * 2,
-            fy2: 0.9 + rnd() * 0.7,   ay2: 3 + rnd() * 5,
-            py2: rnd() * Math.PI * 2,
+            id, element: el, x: ox, y: oy, size,
+            ox, oy,               // origin — sine offsets applied on top
+            t: rnd() * 100,       // random phase start so no two bubbles move together
+            // X: two layered sine waves
+            fx:  0.55 + rnd() * 0.45,  ax:  7 + rnd() * 9,   px:  rnd() * Math.PI * 2,
+            fx2: 1.0  + rnd() * 0.7,   ax2: 3 + rnd() * 5,   px2: rnd() * Math.PI * 2,
+            // Y: two layered sine waves (slightly slower for that floaty upward feeling)
+            fy:  0.45 + rnd() * 0.35,  ay:  6 + rnd() * 8,   py:  rnd() * Math.PI * 2,
+            fy2: 0.85 + rnd() * 0.6,   ay2: 2 + rnd() * 4,   py2: rnd() * Math.PI * 2,
         };
 
         const handleClick = (e) => { e.preventDefault(); e.stopPropagation(); this.handleBubbleClick(id); };
@@ -1816,109 +1802,34 @@ this.streakFlash = document.getElementById('streak-flash');
         return id;
     },
 
+    // kept for any respawn calls elsewhere
+    createBubble(delayed = false, initialPlacement = false, color = null) {
+        const rect  = this.playAreaRect;
+        const size  = CONFIG.BUBBLE_SIZE_MIN + Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
+        const maxX  = rect.width  - size;
+        const maxY  = rect.height * 0.68 - size;
+        const ox    = Math.random() * maxX;
+        const oy    = initialPlacement ? Math.random() * maxY : maxY;
+        return this._spawnBubble(ox, oy, size, color);
+    },
+
     findNonOverlappingPosition(size) {
-        const maxX = this.playAreaRect.width - size;
+        const maxX = this.playAreaRect.width  - size;
         const maxY = this.playAreaRect.height * 0.68 - size;
         for (let attempt = 0; attempt < 50; attempt++) {
             const x = Math.random() * maxX;
             const y = Math.random() * maxY;
-            const r = size / 2;
+            const rv = size / 2;
             let ok = true;
             for (const other of this.bubbles) {
                 const or = other.size / 2;
-                const dx = (x + r) - (other.x + or);
-                const dy = (y + r) - (other.y + or);
-                if (Math.sqrt(dx*dx + dy*dy) < r + or + CONFIG.COLLISION_PADDING) { ok = false; break; }
+                const dx = (x + rv) - (other.x + or);
+                const dy = (y + rv) - (other.y + or);
+                if (Math.sqrt(dx*dx + dy*dy) < rv + or + CONFIG.COLLISION_PADDING) { ok = false; break; }
             }
             if (ok) return { x, y };
         }
         return { x: Math.random() * maxX, y: Math.random() * maxY };
-    },
-
-    createBubble(delayed = false, initialPlacement = false, color = null) {
-        if (this.state !== GameState.PLAYING) return null;
-
-        // For rainbow scene, pick a random color from the palette per bubble
-        const RAINBOW_COLORS = ['#fcd831','#f60000','#cb6ce6','#7ed957','#0cc0df','#5e17eb','#f35329'];
-        const isRainbow = this.currentScene?.isRainbow;
-        const sceneColor = isRainbow
-            ? RAINBOW_COLORS[Math.floor(Math.random() * RAINBOW_COLORS.length)]
-            : (color || this.currentScene?.color || '#fcd831');
-
-        const el = document.createElement('div');
-        el.className = 'bubble';
-
-        const id = 'b_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
-        el.dataset.id = id;
-
-        const size = CONFIG.BUBBLE_SIZE_MIN + Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
-        el.style.width = size + 'px';
-        el.style.height = size + 'px';
-
-        // Colored bubble style
-        const r = parseInt(sceneColor.slice(1,3), 16);
-        const g = parseInt(sceneColor.slice(3,5), 16);
-        const b = parseInt(sceneColor.slice(5,7), 16);
-
-        el.style.background = `
-            radial-gradient(ellipse 38% 38% at 28% 22%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 40%, transparent 70%),
-            radial-gradient(ellipse 20% 15% at 68% 72%, rgba(255,255,255,0.35) 0%, transparent 60%),
-            radial-gradient(ellipse 100% 100% at 50% 50%, rgba(${r},${g},${b},0.95) 0%, rgba(${Math.max(0,r-40)},${Math.max(0,g-40)},${Math.max(0,b-40)},1) 100%)
-        `;
-        el.style.boxShadow = `0 0 16px rgba(${r},${g},${b},0.4), 0 4px 12px rgba(0,0,0,0.3), inset 0 0 12px rgba(255,255,255,0.1)`;
-        el.style.border = `1.5px solid rgba(255,255,255,0.25)`;
-
-        // Spawn position: bottom (lava area) for respawns, random for initial placement
-        const spawnFromBottom = delayed && !initialPlacement;
-        let pos;
-        if (spawnFromBottom) {
-            // Start just above the lava, random X
-            const rect = this.playAreaRect;
-            pos = {
-                x: Math.random() * (rect.width - size),
-                y: rect.height * 0.68 - size  // just above lava
-            };
-        } else {
-            pos = this.findNonOverlappingPosition(size);
-        }
-
-        el.style.left = pos.x + 'px';
-        el.style.top = pos.y + 'px';
-
-        const bubbleData = {
-            id, element: el,
-            x: pos.x, y: pos.y, size,
-            wobbleOffset: Math.random() * Math.PI * 2,
-            vx: (Math.random() - 0.5) * 1.2,
-            vy: (Math.random() - 0.5) * 1.2, // random direction — no upward bias
-            dirTimer: Math.random() * 180,     // ticks until next direction nudge
-            dirInterval: 120 + Math.random() * 180, // how often direction changes
-        };
-
-        const handleClick = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            this.handleBubbleClick(id);
-        };
-        el.addEventListener('click', handleClick);
-        el.addEventListener('touchend', handleClick, { passive: false });
-
-        if (delayed) {
-            // Spawn small from lava, grow as it rises
-            el.style.opacity = '0';
-            el.style.transform = 'scale(0.2)';
-            this.playArea.appendChild(el);
-            requestAnimationFrame(() => {
-                el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                el.style.opacity = '1';
-                el.style.transform = 'scale(1)';
-                setTimeout(() => { el.style.transition = 'transform 0.1s ease-out'; }, 500);
-            });
-        } else {
-            this.playArea.appendChild(el);
-        }
-
-        this.bubbles.push(bubbleData);
-        return id;
     },
 
     assignBadBubble() {
@@ -2295,43 +2206,52 @@ this.streakFlash = document.getElementById('streak-flash');
             const maxX = this.playAreaRect.width;
             const maxY = this.playAreaRect.height * 0.68;
 
+            // Hard play-area limits (bubbles must never cross these)
+            const minBX = 8;
+            const minBY = 84;   // below counter ring
+            const maxBX = maxX - 8;
+            const maxBY = maxY - 8;
+            // Counter zone (top-right) — keep bubbles clear of it
+            const czX = maxX - 80;  // left edge of counter zone
+            const czY = 78;         // bottom edge of counter zone
+
             // === POP COUNTER RING ===
             if (this.timerArc) {
                 const pct = Math.min(this.score / 50, 1);
-                const circumference = 163;
-                this.timerArc.setAttribute('stroke-dashoffset', circumference * (1 - pct));
+                this.timerArc.setAttribute('stroke-dashoffset', 163 * (1 - pct));
                 const sceneColor = this.currentScene?.isRainbow ? '#ffffff' : (this.currentScene?.color || '#ffffff');
                 this.timerArc.setAttribute('stroke', sceneColor);
                 const countText = document.getElementById('pop-count-text');
-                if (countText) {
-                    countText.textContent = this.score;
-                    countText.setAttribute('fill', sceneColor);
-                }
+                if (countText) { countText.textContent = this.score; countText.setAttribute('fill', sceneColor); }
             }
 
-            // Gentle difficulty ramp — only affects sine drift speed
             const speedMult = 1 + Math.min(this.score * 0.008, 0.5);
 
             this.bubbles.forEach(b => {
-                // Advance each bubble's independent time
                 b.t = (b.t || 0) + dt * 0.012 * speedMult;
 
-                // Position = spawn origin + layered sine waves on each axis
-                // Each bubble has unique freq/phase/amplitude so they never sync up
-                const dx = Math.sin(b.t * b.fx + b.px) * b.ax
+                // Two layered sine waves per axis — independent per bubble
+                const dx = Math.sin(b.t * b.fx  + b.px)  * b.ax
                          + Math.sin(b.t * b.fx2 + b.px2) * b.ax2;
-                const dy = Math.sin(b.t * b.fy + b.py) * b.ay
+                const dy = Math.sin(b.t * b.fy  + b.py)  * b.ay
                          + Math.cos(b.t * b.fy2 + b.py2) * b.ay2;
 
                 b.x = b.ox + dx;
                 b.y = b.oy + dy;
 
-                // Soft boundary — push gently back in rather than hard clamp
-                const pad = 4;
-                if (b.x < pad)             b.ox += (pad - b.x) * 0.04;
-                if (b.x > maxX - b.size - pad) b.ox -= (b.x - (maxX - b.size - pad)) * 0.04;
-                if (b.y < pad)             b.oy += (pad - b.y) * 0.04;
-                if (b.y > maxY - b.size - pad) b.oy -= (b.y - (maxY - b.size - pad)) * 0.04;
+                // Hard clamp — if bubble hits boundary, nudge its origin inward so it drifts back naturally
+                if (b.x < minBX)           { b.x = minBX;           b.ox += (minBX - (b.ox + dx)) * 0.06; }
+                if (b.x > maxBX - b.size)  { b.x = maxBX - b.size;  b.ox -= ((b.ox + dx) - (maxBX - b.size)) * 0.06; }
+                if (b.y < minBY)           { b.y = minBY;           b.oy += (minBY - (b.oy + dy)) * 0.06; }
+                if (b.y > maxBY - b.size)  { b.y = maxBY - b.size;  b.oy -= ((b.oy + dy) - (maxBY - b.size)) * 0.06; }
+
+                // Counter zone: push bubbles out of top-right corner
+                if (b.x + b.size > czX && b.y < czY) {
+                    const overL = (b.x + b.size) - czX;
+                    const overD = czY - b.y;
+                    if (overL < overD) { b.x = czX - b.size; b.ox -= overL * 0.1; }
+                    else               { b.y = czY;          b.oy += overD * 0.1; }
+                }
 
                 b.element.style.left = b.x + 'px';
                 b.element.style.top  = b.y + 'px';
@@ -2353,6 +2273,20 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('bb_v2_cleared', '1');
     }
     Game.init();
+
+    // Kill audio when app is swiped away, backgrounded, or loses focus
+    const killAudio = () => {
+        try {
+            if (AudioManager.menuTrack)    { AudioManager.menuTrack.pause();    AudioManager.menuTrack.currentTime    = 0; }
+            if (AudioManager.bubblesTrack) { AudioManager.bubblesTrack.pause(); AudioManager.bubblesTrack.currentTime = 0; }
+            if (AudioManager.sceneTrack)   { AudioManager.sceneTrack.pause();   AudioManager.sceneTrack.currentTime   = 0; }
+            // Cancel any fade intervals
+            if (AudioManager._fadeInterval) { clearInterval(AudioManager._fadeInterval); AudioManager._fadeInterval = null; }
+        } catch(e) {}
+    };
+    document.addEventListener('visibilitychange', () => { if (document.hidden) killAudio(); });
+    window.addEventListener('pagehide', killAudio);
+    window.addEventListener('blur', killAudio);
 
     // Start audio on very first touch/click anywhere — handles autoplay policy
     const startAudio = () => {
