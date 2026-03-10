@@ -1931,31 +1931,29 @@ this.streakFlash = document.getElementById('streak-flash');
             const remaining = [...this.bubbles];
             this.bubbles = [];
 
+            // Scale delay so total chain never exceeds ~2s regardless of bubbles left
+            const maxChainMs = 2000;
+            const perBubble = Math.min(55, Math.floor(maxChainMs / Math.max(remaining.length, 1)));
+
             remaining.forEach((b, i) => {
                 setTimeout(() => {
                     const bel = b.element;
-                    // Inflate
                     bel.style.transition = 'transform 0.15s ease-out';
                     bel.style.transform = 'scale(2.0)';
                     bel.style.background = `radial-gradient(circle, #ffffff 0%, ${this.currentScene.color}cc 40%, ${this.currentScene.color}44 100%)`;
                     bel.style.boxShadow = `0 0 40px ${this.currentScene.color}`;
-
-                    // Splat at bubble center
                     this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
-
-                    // Then burst
                     setTimeout(() => {
                         bel.style.transition = 'transform 0.1s ease-in, opacity 0.1s ease-in';
                         bel.style.transform = 'scale(0)';
                         bel.style.opacity = '0';
                         setTimeout(() => { if (bel.parentNode) bel.remove(); }, 100);
                     }, 150);
-
-                }, i * 55); // 55ms between each pop
+                }, i * perBubble);
             });
 
             // STEP 6: After chain finishes, typewriter then game over
-            const totalTime = remaining.length * 55 + 300;
+            const totalTime = remaining.length * perBubble + 300;
             const gid = this._gameId;
             setTimeout(() => {
                 if (this._gameId !== gid) return; // player exited — don't show end screen
