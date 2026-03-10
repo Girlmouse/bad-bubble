@@ -1693,47 +1693,18 @@ this.streakFlash = document.getElementById('streak-flash');
     },
 
     createInitialBubbles(color) {
-        const count  = CONFIG.BUBBLE_COUNT;
-        const rect   = this.playAreaRect;
-        const areaW  = rect.width;
-        const areaH  = rect.height * 0.68;
-        const topPad = 90;
-        const pad    = 6;
-
-        const usableW = areaW - pad * 2;
-        const usableH = areaH - topPad - pad;
-
-        // Derive cols/rows from aspect ratio so all count bubbles always fit
-        const aspect = usableW / usableH;
-        const cols   = Math.max(1, Math.round(Math.sqrt(count * aspect)));
-        const rows   = Math.max(1, Math.ceil(count / cols));
-        const cellW  = usableW / cols;
-        const cellH  = usableH / rows;
-
-        // Shuffle cell indices for random placement
-        const cells = [];
-        for (let r = 0; r < rows; r++)
-            for (let c = 0; c < cols; c++)
-                cells.push({ c, r });
-        for (let i = cells.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [cells[i], cells[j]] = [cells[j], cells[i]];
-        }
+        const count = CONFIG.BUBBLE_COUNT;
+        const rect  = this.playAreaRect;
+        const areaW = rect.width;
+        const areaH = rect.height * 0.68;
+        const pad   = 6;
 
         for (let i = 0; i < count; i++) {
-            const cell = cells[i % cells.length];
             const size = CONFIG.BUBBLE_SIZE_MIN + Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
-            // Jitter stays within cell bounds so no overlap at spawn
-            const maxJitter = Math.max(0, (Math.min(cellW, cellH) - size) * 0.3);
-            const jx = (Math.random() - 0.5) * maxJitter * 2;
-            const jy = (Math.random() - 0.5) * maxJitter * 2;
-            const x  = pad     + cell.c * cellW + (cellW - size) / 2 + jx;
-            const y  = topPad  + cell.r * cellH + (cellH - size) / 2 + jy;
-            this._makeBubble(
-                Math.max(pad,    Math.min(areaW - size - pad, x)),
-                Math.max(topPad, Math.min(areaH - size - pad, y)),
-                size, color
-            );
+            // Stagger spawn positions throughout the full height so screen fills naturally
+            const x = pad + Math.random() * (areaW - size - pad * 2);
+            const y = 90 + Math.random() * (areaH - 90 - size);
+            this._makeBubble(x, y, size, color);
         }
     },
 
@@ -1764,17 +1735,14 @@ this.streakFlash = document.getElementById('streak-flash');
         el.style.left = px + 'px';
         el.style.top  = py + 'px';
 
-        // Physics state — low initial velocity, unique wobble frequency
-        const angle = Math.random() * Math.PI * 2;
-        const spd   = 0.05 + Math.random() * 0.1; // barely moving at start
         const bubbleData = {
             id, element: el, x: px, y: py, size,
-            vx: Math.cos(angle) * spd,
-            vy: Math.sin(angle) * spd,
-            wobbleOffset: Math.random() * Math.PI * 2,
-            wobbleFreq:   0.8 + Math.random() * 1.4,  // unique per bubble
-            dirTimer:     Math.random() * 300,          // stagger so not all nudge at once
-            dirInterval:  220 + Math.random() * 300,
+            // Each bubble rises at its own speed, sways on its own rhythm
+            floatSpeed:   0.18 + Math.random() * 0.20,  // upward drift speed
+            wobbleOffset: Math.random() * Math.PI * 2,   // phase — all out of sync
+            wobbleSpeed:  0.008 + Math.random() * 0.008, // how fast it sways
+            wobbleAmt:    0.3 + Math.random() * 0.5,     // how wide the sway
+            vx: 0, vy: 0,                                 // collision impulse accumulator
         };
 
         const handleClick = (e) => { e.preventDefault(); e.stopPropagation(); this.handleBubbleClick(id); };
@@ -2137,29 +2105,26 @@ this.streakFlash = document.getElementById('streak-flash');
 
     handleCollision(b1, b2) {
         const r1 = b1.size / 2, r2 = b2.size / 2;
-        const cx1 = b1.x + r1, cy1 = b1.y + r1;
-        const cx2 = b2.x + r2, cy2 = b2.y + r2;
-        const dx = cx2 - cx1, dy = cy2 - cy1;
+        const dx = (b2.x + r2) - (b1.x + r1);
+        const dy = (b2.y + r2) - (b1.y + r1);
         const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
-        const minDist = r1 + r2 + 2; // 2px padding between edges
-
+        const minDist = r1 + r2 + 1;
         if (dist >= minDist) return;
 
-        // Separate positions so they no longer overlap
         const nx = dx / dist, ny = dy / dist;
         const overlap = (minDist - dist) * 0.5;
+
+        // Separate positions
         b1.x -= nx * overlap; b1.y -= ny * overlap;
         b2.x += nx * overlap; b2.y += ny * overlap;
 
-        // Elastic velocity exchange along collision normal — very soft restitution
+        // Exchange a little velocity so they drift apart naturally
         const dvx = b2.vx - b1.vx, dvy = b2.vy - b1.vy;
         const dot = dvx * nx + dvy * ny;
-        if (dot >= 0) return; // already separating
-
-        const restitution = 0.25; // soft bounce — bubbles drift apart gently
-        const impulse = (1 + restitution) * dot / 2;
-        b1.vx += impulse * nx; b1.vy += impulse * ny;
-        b2.vx -= impulse * nx; b2.vy -= impulse * ny;
+        if (dot >= 0) return;
+        const imp = dot * 0.5;
+        b1.vx += imp * nx; b1.vy += imp * ny;
+        b2.vx -= imp * nx; b2.vy -= imp * ny;
     },
 
     startAnimationLoop() {
@@ -2171,12 +2136,9 @@ this.streakFlash = document.getElementById('streak-flash');
 
             this.updatePlayAreaRect();
             const maxX = this.playAreaRect.width;
-            const maxY = this.playAreaRect.height * 0.68; // stay above lava
-
-            // Boundaries — top clears counter ring
-            const minBX = 4, maxBX = maxX - 4;
-            const minBY = 86, maxBY = maxY - 4;
-            const czX = maxX - 78, czY = 76; // counter zone exclusion
+            const maxY = this.playAreaRect.height * 0.68;
+            const pad  = 4;
+            const czX  = maxX - 78, czY = 76; // counter zone
 
             // === POP COUNTER RING ===
             if (this.timerArc) {
@@ -2184,70 +2146,54 @@ this.streakFlash = document.getElementById('streak-flash');
                 this.timerArc.setAttribute('stroke-dashoffset', 163 * (1 - pct));
                 const sceneColor = this.currentScene?.isRainbow ? '#ffffff' : (this.currentScene?.color || '#ffffff');
                 this.timerArc.setAttribute('stroke', sceneColor);
-                const countText = document.getElementById('pop-count-text');
-                if (countText) { countText.textContent = this.score; countText.setAttribute('fill', sceneColor); }
+                const ct = document.getElementById('pop-count-text');
+                if (ct) { ct.textContent = this.score; ct.setAttribute('fill', sceneColor); }
             }
 
-            // Gentle difficulty ramp — only nudge frequency speeds up
-            const speedMult = 1 + Math.min(this.score * 0.008, 0.5);
+            const speedMult = 1 + Math.min(this.score * 0.01, 0.6);
 
             this.bubbles.forEach(b => {
-                // Advance personal wobble timer
-                b.wobbleOffset = (b.wobbleOffset || 0) + 0.008 * dt;
+                // Advance wobble
+                b.wobbleOffset += b.wobbleSpeed * dt;
 
-                // Periodic gentle nudge in a random direction — low magnitude, infrequent
-                b.dirTimer = (b.dirTimer || 0) + dt;
-                if (b.dirTimer >= b.dirInterval) {
-                    b.dirTimer = 0;
-                    b.dirInterval = 220 + Math.random() * 300; // nudge every 3.5–8s
-                    const angle = Math.random() * Math.PI * 2;
-                    const mag   = 0.15 + Math.random() * 0.2;  // very gentle push
-                    b.vx += Math.cos(angle) * mag;
-                    b.vy += Math.sin(angle) * mag;
+                // Core motion: float upward + sine sway
+                b.y -= b.floatSpeed * speedMult * dt;
+                b.x += Math.sin(b.wobbleOffset) * b.wobbleAmt * dt;
+
+                // Apply any collision impulse and decay it quickly
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+                b.vx *= 0.92;
+                b.vy *= 0.92;
+
+                // Wrap at top — bubble pops out from lava again
+                if (b.y + b.size < 0) {
+                    b.y = maxY;
+                    b.x = pad + Math.random() * (maxX - b.size - pad * 2);
+                    b.vx = 0; b.vy = 0;
                 }
 
-                // Sinusoidal side-drift — each bubble on its own frequency
-                b.vx += Math.sin(b.wobbleOffset * b.wobbleFreq) * 0.008 * dt;
+                // Side walls — soft bounce
+                if (b.x < pad)               { b.x = pad;               b.vx = Math.abs(b.vx) * 0.4; }
+                if (b.x > maxX - b.size - pad) { b.x = maxX - b.size - pad; b.vx = -Math.abs(b.vx) * 0.4; }
 
-                // Apply velocity
-                b.x += b.vx * speedMult * dt;
-                b.y += b.vy * speedMult * dt;
+                // Bottom: don't sink into lava
+                if (b.y > maxY - b.size) { b.y = maxY - b.size; b.vy = -Math.abs(b.vy) * 0.3; }
 
-                // Heavy damping — speed bleeds away fast so motion stays slow and dreamy
-                b.vx *= 0.975;
-                b.vy *= 0.975;
-
-                // Cap speed so nothing ever rushes
-                const spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-                const maxSpd = 0.8 * speedMult;
-                if (spd > maxSpd) { b.vx = (b.vx / spd) * maxSpd; b.vy = (b.vy / spd) * maxSpd; }
-
-                // Soft wall bounce — lose most energy on contact
-                if (b.x < minBX)           { b.x = minBX;           b.vx =  Math.abs(b.vx) * 0.3; }
-                if (b.x > maxBX - b.size)  { b.x = maxBX - b.size;  b.vx = -Math.abs(b.vx) * 0.3; }
-                if (b.y < minBY)           { b.y = minBY;           b.vy =  Math.abs(b.vy) * 0.3; }
-                if (b.y > maxBY - b.size)  { b.y = maxBY - b.size;  b.vy = -Math.abs(b.vy) * 0.3; }
-
-                // Counter zone — nudge out and redirect velocity
+                // Counter zone — nudge out
                 if (b.x + b.size > czX && b.y < czY) {
-                    const overL = (b.x + b.size) - czX;
-                    const overD = czY - b.y;
-                    if (overL < overD) { b.x = czX - b.size; b.vx = -Math.abs(b.vx) * 0.3; }
-                    else               { b.y = czY;          b.vy =  Math.abs(b.vy) * 0.3; }
+                    b.x = czX - b.size;
+                    b.vx = -0.5;
                 }
             });
 
-            // Collision pass — elastic drift-apart response
-            for (let i = 0; i < this.bubbles.length; i++) {
-                for (let j = i + 1; j < this.bubbles.length; j++) {
+            // Collision pass
+            for (let i = 0; i < this.bubbles.length; i++)
+                for (let j = i + 1; j < this.bubbles.length; j++)
                     this.handleCollision(this.bubbles[i], this.bubbles[j]);
-                }
-            }
 
-            // Final position apply + re-clamp after collisions shifted positions
+            // Render
             this.bubbles.forEach(b => {
-                b.x = Math.max(minBX, Math.min(maxBX - b.size, b.x));
-                b.y = Math.max(minBY, Math.min(maxBY - b.size, b.y));
                 b.element.style.left = b.x + 'px';
                 b.element.style.top  = b.y + 'px';
             });
