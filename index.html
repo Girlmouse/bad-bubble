@@ -1537,6 +1537,7 @@ const Game = {
     respawnTimeouts: [],
     playAreaRect: null,
     currentScene: null,
+    _gameId: 0,
 
     init() {
         this.playArea = document.getElementById('play-area');
@@ -1639,6 +1640,8 @@ this.streakFlash = document.getElementById('streak-flash');
     },
 
     async startGame(scene) {
+        this._gameId++;
+        const myGameId = this._gameId;
         this.cleanup();
         this.currentScene = scene;
         await AudioManager.setup();
@@ -1763,8 +1766,8 @@ this.streakFlash = document.getElementById('streak-flash');
             id, element: el,
             x: pos.x, y: pos.y, size,
             wobbleOffset: Math.random() * Math.PI * 2,
-            vx: (Math.random() - 0.5) * 0.8,
-            vy: -(0.1 + Math.random() * 0.3), // start drifting upward gently
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: (Math.random() - 0.5) * 1.2, // random direction — no upward bias
             dirTimer: Math.random() * 180,     // ticks until next direction nudge
             dirInterval: 120 + Math.random() * 180, // how often direction changes
         };
@@ -1941,8 +1944,11 @@ this.streakFlash = document.getElementById('streak-flash');
 
             // STEP 6: After chain finishes, typewriter then game over
             const totalTime = remaining.length * 55 + 300;
+            const gid = this._gameId;
             setTimeout(() => {
+                if (this._gameId !== gid) return; // player exited — don't show end screen
                 this.showTypewriter('Bubbles will be back!', () => {
+                    if (this._gameId !== gid) return;
                     this.showGameOver();
                 });
             }, totalTime);
@@ -2118,6 +2124,7 @@ this.streakFlash = document.getElementById('streak-flash');
     },
 
     goHome() {
+        this._gameId++;
         EndBubbles.stop();
         AudioManager.startMusic();
         this.cleanup();
@@ -2188,16 +2195,20 @@ this.streakFlash = document.getElementById('streak-flash');
                 if (b.dirTimer >= b.dirInterval) {
                     b.dirTimer = 0;
                     b.dirInterval = 120 + Math.random() * 200;
-                    b.vx += (Math.random() - 0.5) * 1.2;
-                    b.vy += (Math.random() - 0.5) * 1.2;
+                    b.vx += (Math.random() - 0.5) * 1.8;
+                    b.vy += (Math.random() - 0.5) * 1.8;
                     // Clamp speed so they don't go crazy
                     const speed = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
-                    const maxSpeed = 0.9;
+                    const maxSpeed = 1.5;
                     if (speed > maxSpeed) {
                         b.vx = (b.vx / speed) * maxSpeed;
                         b.vy = (b.vy / speed) * maxSpeed;
                     }
                 }
+
+                // Soft pull toward vertical centre — keeps bubbles spread across whole area
+                const centerY = maxY * 0.5;
+                b.vy += (centerY - (b.y + b.size * 0.5)) * 0.0003;
 
                 // Apply velocity + gentle float + wobble
                 b.x += b.vx * speedMult * dt;
