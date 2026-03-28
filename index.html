@@ -5,7 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Bad Bubble</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+        <meta name="screen-orientation" content="portrait">
     <style>
+        @media (orientation: landscape) {
+            body::before {
+                content: 'Please rotate your device';
+                position: fixed; inset: 0; z-index: 9999;
+                background: #0a0908;
+                color: rgba(220,200,170,0.8);
+                font-family: Georgia, serif;
+                font-size: 1.2rem; letter-spacing: 3px;
+                text-transform: uppercase;
+                display: flex; align-items: center; justify-content: center;
+            }
+            #game-container { display: none; }
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
@@ -1666,6 +1681,11 @@ function loop() {
    INIT
 ================================================ */
 document.addEventListener('DOMContentLoaded', ()=>{
+    // Lock portrait orientation where supported
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait').catch(()=>{});
+    }
+
     canvas = document.getElementById('main-canvas');
     ctx    = canvas.getContext('2d');
 
