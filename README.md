@@ -1,33 +1,20 @@
-Bad Bubble
+# End Bubble
 
-Bad Bubble is a minimalist survival tap game built for web and mobile.
+End Bubble is a dark atmospheric tap game built for mobile.
 
-Pop bubbles to increase your score — but one bubble is “bad.”
-Find it, and the round ends.
+Radioactive bubbles emerge and float away. Tap as many as you can before they disappear — but beware. One of them will end it all.
 
-Simple. Calm. Slightly mischievous.
+---
 
-Features
+## Tech
 
-24 floating bubbles
+- HTML / CSS / Vanilla JavaScript
+- No external libraries
+- HTML5 Canvas
+- Web Audio API
+- Capacitor — Android wrapper
+- Portrait only
 
-Randomly assigned “bad” bubble each round
+---
 
-Survival-based scoring
-
-Local high score tracking
-
-Portrait mobile layout
-
-Soft pastel backgrounds
-
-Tech
-
-HTML
-
-CSS
-
-Vanilla JavaScript
-
-No external libraries
-
+*LunaBelleGames LLC*
