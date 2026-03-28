@@ -1132,7 +1132,7 @@ const MIN_BUB     = 6;
 
 function mkBubble(W, H, scatter) {
     const id = nextId++;
-    const r  = 18 + Math.random() * 18;
+    const r  = 8 + Math.random() * 14;  // 8–22px radius — fits through vent opening
     const vent = Vents.vents.length ? Vents.randomVent() : {x:W*0.5, y:H*0.85};
     const angle = -Math.PI/2 + (Math.random()-.5)*.65;
     const spd   = 1.0 + Math.random()*1.2;
@@ -1166,19 +1166,45 @@ function drawBubble(ctx, b) {
     if (b.alpha <= 0.01) return;
     ctx.save(); ctx.globalAlpha = b.alpha;
     const {x, y, r} = b;
-    const bg = ctx.createRadialGradient(x-r*.28, y-r*.3, r*.04, x, y, r);
-    bg.addColorStop(0,   'rgba(210,175,110,0.11)');
-    bg.addColorStop(0.6, 'rgba(190,155,90,0.06)');
-    bg.addColorStop(1,   'rgba(170,135,75,0.13)');
-    ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='rgba(220,185,120,0.38)'; ctx.lineWidth=1.2;
-    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke();
-    const sh=ctx.createRadialGradient(x-r*.33,y-r*.36,0,x-r*.22,y-r*.26,r*.42);
-    sh.addColorStop(0,'rgba(255,240,200,0.60)'); sh.addColorStop(0.5,'rgba(255,230,170,0.14)'); sh.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=sh; ctx.beginPath(); ctx.arc(x-r*.22,y-r*.26,r*.42,0,Math.PI*2); ctx.fill();
-    const sh2=ctx.createRadialGradient(x+r*.28,y+r*.30,0,x+r*.28,y+r*.30,r*.18);
-    sh2.addColorStop(0,'rgba(255,235,180,0.25)'); sh2.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=sh2; ctx.beginPath(); ctx.arc(x+r*.28,y+r*.30,r*.18,0,Math.PI*2); ctx.fill();
+
+    // Each bubble gets a slightly randomised hue — amber to toxic green
+    const hue = b.hue || (b.hue = 45 + Math.floor(Math.random() * 55)); // 45=amber, 100=yellow-green
+
+    // Outer glow — radioactive bloom
+    const glow = ctx.createRadialGradient(x, y, r*0.5, x, y, r*2.0);
+    glow.addColorStop(0, `hsla(${hue},100%,55%,0.18)`);
+    glow.addColorStop(1, `hsla(${hue},100%,40%,0)`);
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(x, y, r*2.0, 0, Math.PI*2); ctx.fill();
+
+    // Main body — opaque, dark centre fading to vivid rim
+    const body = ctx.createRadialGradient(x-r*.2, y-r*.25, r*.05, x, y, r);
+    body.addColorStop(0,   `hsla(${hue},70%,22%,0.92)`);   // dark centre
+    body.addColorStop(0.55, `hsla(${hue},90%,38%,0.88)`);  // mid glow
+    body.addColorStop(1,    `hsla(${hue},100%,58%,0.95)`); // vivid edge
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+
+    // Rim — bright hot edge
+    ctx.strokeStyle = `hsla(${hue},100%,72%,0.9)`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.stroke();
+
+    // Inner shine — top-left hot spot
+    const shine = ctx.createRadialGradient(x-r*.32, y-r*.34, 0, x-r*.18, y-r*.20, r*.38);
+    shine.addColorStop(0,   `hsla(${hue+20},100%,90%,0.75)`);
+    shine.addColorStop(0.5, `hsla(${hue},100%,70%,0.20)`);
+    shine.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = shine;
+    ctx.beginPath(); ctx.arc(x-r*.18, y-r*.20, r*.38, 0, Math.PI*2); ctx.fill();
+
+    // Small bottom glint
+    const glint = ctx.createRadialGradient(x+r*.28, y+r*.28, 0, x+r*.28, y+r*.28, r*.14);
+    glint.addColorStop(0, `hsla(${hue+10},100%,85%,0.35)`);
+    glint.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glint;
+    ctx.beginPath(); ctx.arc(x+r*.28, y+r*.28, r*.14, 0, Math.PI*2); ctx.fill();
+
     ctx.restore();
 }
 
@@ -1210,8 +1236,8 @@ function updateParticles() {
 function drawParticles(ctx) {
     particles.forEach(p=>{
         ctx.save(); ctx.globalAlpha=p.alpha;
-        if(p.ring){ctx.strokeStyle='rgba(220,170,80,0.8)';ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.stroke();}
-        else{const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);g.addColorStop(0,`rgba(240,190,90,${p.alpha})`);g.addColorStop(1,'rgba(180,110,30,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();}
+        if(p.ring){ctx.strokeStyle=`hsla(${70+Math.random()*40},100%,65%,${p.alpha*0.8})`;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.stroke();}
+        else{const hue=45+Math.random()*55;const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);g.addColorStop(0,`hsla(${hue},100%,75%,${p.alpha})`);g.addColorStop(1,`hsla(${hue},100%,45%,0)`);ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();}
         ctx.restore();
     });
 }
@@ -1479,7 +1505,7 @@ function onTap(cx, cy) {
         const b = bubbles[i];
         if (b.fadingOut || b.alpha<0.15) continue;
         const dx=cx-b.x, dy=cy-b.y;
-        const tapR = b.r + 10; // generous tap area for mobile
+        const tapR = b.r + 14; // generous tap area for mobile
         if (dx*dx+dy*dy <= tapR*tapR) {
             if (b.id===badId) _popBad(b);
             else              _popGood(b, i);
