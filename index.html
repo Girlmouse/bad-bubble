@@ -47,7 +47,67 @@
             opacity: 0.045;
         }
 
-        /* Exit button (during play) */
+        /* Volume control */
+        #vol-btn {
+            position: absolute;
+            bottom: max(22px, env(safe-area-inset-bottom));
+            left: 22px;
+            z-index: 40;
+            width: 36px; height: 36px;
+            background: rgba(0,0,0,0.38);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: border-color 0.2s;
+            padding: 0;
+            isolation: isolate;
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+        }
+        #vol-btn:hover { border-color: rgba(255,255,255,0.22); }
+        #vol-btn svg { width: 16px; height: 16px; }
+
+        #vol-panel {
+            position: absolute;
+            bottom: max(68px, calc(env(safe-area-inset-bottom) + 46px));
+            left: 14px;
+            z-index: 40;
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 20px;
+            padding: 14px 10px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            isolation: isolate;
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+        }
+        #vol-panel.open { display: flex; }
+        #vol-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            writing-mode: vertical-lr;
+            direction: rtl;
+            width: 4px; height: 80px;
+            background: rgba(200,180,150,0.25);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        #vol-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: rgba(220,200,170,0.85);
+            cursor: pointer;
+        }
+        #vol-slider::-moz-range-thumb {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: rgba(220,200,170,0.85);
+            border: none; cursor: pointer;
+        }
         #exit-btn {
             position: absolute;
             bottom: env(safe-area-inset-bottom, 22px);
@@ -192,6 +252,17 @@
 
     <!-- Exit button (during play) -->
     <button id="exit-btn">Exit</button>
+
+    <!-- Volume control — always visible -->
+    <button id="vol-btn" aria-label="Volume">
+        <svg id="vol-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(210,190,165,0.70)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path id="vol-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>
+    </button>
+    <div id="vol-panel">
+        <input id="vol-slider" type="range" min="0" max="100" value="80" orient="vertical">
+    </div>
 
     <!-- Start -->
     <div id="start-screen">
@@ -1429,16 +1500,21 @@ function onTap(cx, cy) {
 }
 
 /* ================================================
+   VOLUME CONTROL — state
+================================================ */
+let masterVolume = 0.80;
+let isMuted = false;
+
+/* ================================================
    SOUND ENGINE — file-based audio
 ================================================ */
 const SoundEngine = {
     actx: null, gain: null, on: false,
-    _bubblesEl: null, _popEl: null, _fartEl: null,
+    _bubblesEl: null, _musicEl: null, _popEl: null, _fartEl: null,
 
     resume() {
-        if (this.on) { this._setVol(0.5); return; }
+        if (this.on) { this._applyAll(); return; }
         try {
-            // Unlock AudioContext on user gesture (mobile requirement)
             this.actx = new (window.AudioContext||window.webkitAudioContext)();
             if (this.actx.state === 'suspended') this.actx.resume();
             this._initAudio();
@@ -1450,59 +1526,130 @@ const SoundEngine = {
         // Ambient bubbling loop
         this._bubblesEl = new Audio('audio/bubbles.mp3');
         this._bubblesEl.loop = true;
-        this._bubblesEl.volume = 0.0;
+        this._bubblesEl.volume = 0;
         this._bubblesEl.play().catch(()=>{});
-        // Fade in
-        let v = 0;
-        const fade = setInterval(() => {
-            v = Math.min(v + 0.02, 0.45);
-            if (this._bubblesEl) this._bubblesEl.volume = v;
-            if (v >= 0.45) clearInterval(fade);
-        }, 60);
+
+        // Background music loop
+        this._musicEl = new Audio('audio/music.mp3');
+        this._musicEl.loop = true;
+        this._musicEl.volume = 0;
+        this._musicEl.play().catch(()=>{});
+
+        // Fade both in gently
+        let step = 0;
+        const fadeIn = setInterval(() => {
+            step++;
+            const base = isMuted ? 0 : masterVolume;
+            if (this._bubblesEl) this._bubblesEl.volume = Math.min(step*0.012, base*0.28);
+            if (this._musicEl)   this._musicEl.volume   = Math.min(step*0.008, base*0.18);
+            if (step >= 25) clearInterval(fadeIn);
+        }, 80);
 
         // Preload one-shot sounds
         this._popEl  = new Audio('audio/pop.mp3');
         this._fartEl = new Audio('audio/fart.mp3');
-        this._popEl.volume  = 0.7;
-        this._fartEl.volume = 0.9;
     },
 
-    _setVol(v) {
-        if (this._bubblesEl) this._bubblesEl.volume = v;
+    _applyAll() {
+        if (!this.on) return;
+        const base = isMuted ? 0 : masterVolume;
+        if (this._bubblesEl) this._bubblesEl.volume = base * 0.28;
+        if (this._musicEl)   this._musicEl.volume   = base * 0.18;
     },
+
+    _setVol(v) { this._applyAll(); },
 
     fadeOut(sec) {
-        if (!this._bubblesEl) return;
-        const start = this._bubblesEl.volume;
-        const steps = sec * 20;
-        const dec   = start / steps;
+        const bStart = this._bubblesEl ? this._bubblesEl.volume : 0;
+        const mStart = this._musicEl   ? this._musicEl.volume   : 0;
+        const steps = Math.max(1, sec * 20);
         let n = 0;
-        const fade = setInterval(() => {
+        const t = setInterval(() => {
             n++;
-            if (this._bubblesEl) this._bubblesEl.volume = Math.max(0, start - dec*n);
-            if (n >= steps) clearInterval(fade);
+            if (this._bubblesEl) this._bubblesEl.volume = Math.max(0, bStart*(1-n/steps));
+            if (this._musicEl)   this._musicEl.volume   = Math.max(0, mStart*(1-n/steps));
+            if (n >= steps) clearInterval(t);
         }, 1000/20);
     },
 
     playPop() {
-        if (!this._popEl) return;
+        if (!this._popEl || isMuted) return;
         try {
-            // Clone so rapid taps overlap cleanly
             const s = this._popEl.cloneNode();
-            s.volume = 0.6 + Math.random()*0.2;
+            s.volume = (0.6 + Math.random()*0.2) * masterVolume;
             s.play().catch(()=>{});
         } catch(e){}
     },
 
     playWhoosh() {
-        if (!this._fartEl) return;
+        if (!this._fartEl || isMuted) return;
         try {
             const s = this._fartEl.cloneNode();
-            s.volume = 0.9;
+            s.volume = 0.9 * masterVolume;
             s.play().catch(()=>{});
         } catch(e){}
     },
 };
+
+/* ================================================
+   VOLUME CONTROL — UI
+================================================ */
+function _applyVolume() {
+    const base = isMuted ? 0 : masterVolume;
+    if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.volume = base * 0.28;
+    if (SoundEngine._musicEl)   SoundEngine._musicEl.volume   = base * 0.18;
+    // Update icon
+    const waves = document.getElementById('vol-waves');
+    const icon  = document.getElementById('vol-icon');
+    if (isMuted || v === 0) {
+        waves.style.display = 'none';
+        // Add muted X line if not present
+        let mx = icon.querySelector('#vol-x');
+        if (!mx) {
+            mx = document.createElementNS('http://www.w3.org/2000/svg','line');
+            mx.setAttribute('id','vol-x');
+            mx.setAttribute('x1','23'); mx.setAttribute('y1','9');
+            mx.setAttribute('x2','17'); mx.setAttribute('y2','15');
+            mx.setAttribute('stroke','rgba(210,190,165,0.70)');
+            mx.setAttribute('stroke-width','1.8');
+            mx.setAttribute('stroke-linecap','round');
+            icon.appendChild(mx);
+            const mx2 = mx.cloneNode();
+            mx2.setAttribute('id','vol-x2');
+            mx2.setAttribute('x1','17'); mx2.setAttribute('y1','9');
+            mx2.setAttribute('x2','23'); mx2.setAttribute('y2','15');
+            icon.appendChild(mx2);
+        }
+    } else {
+        waves.style.display = '';
+        ['vol-x','vol-x2'].forEach(id => { const el=icon.querySelector('#'+id); if(el) el.remove(); });
+    }
+}
+
+document.getElementById('vol-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    const panel = document.getElementById('vol-panel');
+    panel.classList.toggle('open');
+});
+
+document.getElementById('vol-slider').addEventListener('input', e => {
+    masterVolume = parseInt(e.target.value) / 100;
+    isMuted = masterVolume === 0;
+    _applyVolume();
+});
+
+// Tap speaker icon itself to toggle mute
+document.getElementById('vol-btn').addEventListener('dblclick', e => {
+    e.stopPropagation();
+    isMuted = !isMuted;
+    document.getElementById('vol-slider').value = isMuted ? 0 : masterVolume * 100;
+    _applyVolume();
+});
+
+// Close panel when tapping elsewhere
+document.addEventListener('click', () => {
+    document.getElementById('vol-panel').classList.remove('open');
+});
 
 function drawCounter(ctx) {
     if (!showCounter) return;
