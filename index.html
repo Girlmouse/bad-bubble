@@ -1527,7 +1527,7 @@ const SoundEngine = {
         const fadeIn = setInterval(() => {
             step++;
             const base = isMuted ? 0 : masterVolume;
-            if (this._bubblesEl) this._bubblesEl.volume = Math.min(step*0.005, base*0.08);  // very quiet bg
+            if (this._bubblesEl) this._bubblesEl.volume = Math.min(step*0.003, base*0.04);  // very quiet bg
             if (this._musicEl)   this._musicEl.volume   = Math.min(step*0.020, base*0.65);  // music prominent
             if (step >= 35) clearInterval(fadeIn);
         }, 80);
@@ -1540,7 +1540,7 @@ const SoundEngine = {
     _applyAll() {
         if (!this.on) return;
         const base = isMuted ? 0 : masterVolume;
-        if (this._bubblesEl) this._bubblesEl.volume = base * 0.08;
+        if (this._bubblesEl) this._bubblesEl.volume = base * 0.04;
         if (this._musicEl)   this._musicEl.volume   = base * 0.65;
     },
 
@@ -1570,14 +1570,14 @@ const SoundEngine = {
             o.frequency.setValueAtTime(f*1.6, now);
             o.frequency.exponentialRampToValueAtTime(f, now+0.06);
             g.gain.setValueAtTime(0.0, now);
-            g.gain.linearRampToValueAtTime(0.08 * masterVolume, now+0.008);
+            g.gain.linearRampToValueAtTime(0.22 * masterVolume, now+0.008);
             g.gain.exponentialRampToValueAtTime(0.010, now+0.12);
             g.gain.exponentialRampToValueAtTime(0.001, now+0.4);
             o.connect(g); g.connect(actx.destination);
             o.start(now); o.stop(now+0.4);
             const o2 = actx.createOscillator(), g2 = actx.createGain();
             o2.type = 'sine'; o2.frequency.value = f*0.5;
-            g2.gain.setValueAtTime(0.06 * masterVolume, now);
+            g2.gain.setValueAtTime(0.14 * masterVolume, now);
             g2.gain.exponentialRampToValueAtTime(0.001, now+0.18);
             o2.connect(g2); g2.connect(actx.destination);
             o2.start(now); o2.stop(now+0.18);
@@ -1646,7 +1646,7 @@ const SoundEngine = {
 ================================================ */
 function _applyVolume() {
     const base = isMuted ? 0 : masterVolume;
-    if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.volume = base * 0.08;
+    if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.volume = base * 0.04;
     if (SoundEngine._musicEl)   SoundEngine._musicEl.volume   = base * 0.65;
     // Update icon
     const waves = document.getElementById('vol-waves');
