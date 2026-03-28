@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Bad Bubble</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+    <title>End Bubble</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
         <meta name="screen-orientation" content="portrait">
     <style>
         @media (orientation: landscape) {
@@ -13,7 +13,7 @@
                 position: fixed; inset: 0; z-index: 9999;
                 background: #0a0908;
                 color: rgba(220,200,170,0.8);
-                font-family: Georgia, serif;
+                font-family: 'Syncopate', sans-serif;
                 font-size: 1.2rem; letter-spacing: 3px;
                 text-transform: uppercase;
                 display: flex; align-items: center; justify-content: center;
@@ -29,7 +29,7 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             background: #0a0908;
-            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-family: 'Syncopate', sans-serif;
         }
 
         body { margin: 0; padding: 0; }
@@ -92,7 +92,7 @@
             background: rgba(0,0,0,0.40);
             border: 1px solid rgba(255,255,255,0.12);
             color: rgba(210,190,165,0.65);
-            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-family: 'Syncopate', sans-serif;
             font-size: 0.68rem;
             letter-spacing: 3px;
             text-transform: uppercase;
@@ -121,8 +121,8 @@
 
         .start-title {
             font-size: 2.8rem;
-            font-weight: 300;
-            font-style: italic;
+            font-weight: 400;
+            font-style: normal;
             color: rgba(235,218,195,0.98);
             letter-spacing: 5px;
             text-transform: uppercase;
@@ -132,7 +132,7 @@
 
         .start-sub {
             font-size: 0.85rem;
-            font-weight: 300;
+            font-weight: 400;
             color: rgba(210,190,162,0.92);
             letter-spacing: 4px;
             text-transform: uppercase;
@@ -141,13 +141,14 @@
         }
 
         .start-prompt {
-            font-size: 0.75rem;
-            font-weight: 300;
-            color: rgba(215,195,165,0.80);
-            letter-spacing: 5px;
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: hsl(72, 100%, 62%);
+            letter-spacing: 4px;
             text-transform: uppercase;
             animation: breathe 3.5s ease-in-out infinite;
-            text-shadow: 0 1px 8px rgba(0,0,0,1);
+            text-shadow: 0 0 12px hsl(72,100%,50%), 0 0 28px hsl(72,100%,40%), 0 1px 8px rgba(0,0,0,1);
         }
 
         @keyframes breathe {
@@ -174,7 +175,7 @@
 
         .end-popped {
             font-size: 1.0rem;
-            font-weight: 300;
+            font-weight: 400;
             color: rgba(205,185,158,0.85);
             letter-spacing: 5px;
             text-transform: uppercase;
@@ -184,7 +185,7 @@
 
         .end-number {
             font-size: 7rem;
-            font-weight: 300;
+            font-weight: 400;
             color: rgba(235,215,185,0.98);
             line-height: 1;
             letter-spacing: 3px;
@@ -194,7 +195,7 @@
 
         .end-best-line {
             font-size: 0.90rem;
-            font-weight: 300;
+            font-weight: 400;
             color: rgba(195,175,148,0.72);
             letter-spacing: 4px;
             text-transform: uppercase;
@@ -203,13 +204,14 @@
         }
 
         .end-again {
-            font-size: 0.80rem;
-            font-weight: 300;
-            color: rgba(210,190,162,0.65);
-            letter-spacing: 5px;
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: hsl(72, 100%, 62%);
+            letter-spacing: 4px;
             text-transform: uppercase;
             animation: breathe 3.5s ease-in-out infinite;
-            text-shadow: 0 1px 8px rgba(0,0,0,1);
+            text-shadow: 0 0 12px hsl(72,100%,50%), 0 0 28px hsl(72,100%,40%), 0 1px 8px rgba(0,0,0,1);
         }
     </style>
 </head>
@@ -237,17 +239,17 @@
 
     <!-- Start -->
     <div id="start-screen">
-        <div class="start-title">Bad Bubble</div>
+        <div class="start-title">End Bubble</div>
         <div class="start-sub">find the one that ends it all</div>
         <div class="start-prompt">touch to begin</div>
     </div>
 
     <!-- End -->
     <div id="end-screen">
-        <div class="end-popped">you popped</div>
+        <div class="end-popped">bubbles perished</div>
         <div class="end-number" id="end-num">0</div>
         <div class="end-best-line" id="end-best">best — 0</div>
-        <div class="end-again">touch to try again</div>
+        <div class="end-again">play again</div>
     </div>
 </div>
 
@@ -1711,10 +1713,10 @@ function drawCounter(ctx) {
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,1)';
     ctx.shadowBlur = 20;
-    ctx.font = "300 3.8rem 'Cormorant Garamond', Georgia, serif";
+    ctx.font = "700 3.2rem 'Syncopate', sans-serif";
     ctx.fillStyle = 'rgba(232,212,184,0.96)';
     ctx.fillText(score, 22, 72);
-    ctx.font = "300 0.9rem 'Cormorant Garamond', Georgia, serif";
+    ctx.font = "400 0.65rem 'Syncopate', sans-serif";
     ctx.fillStyle = 'rgba(200,180,152,0.75)';
     ctx.shadowBlur = 12;
     ctx.fillText('BEST — ' + best, 24, 105);
