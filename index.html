@@ -47,11 +47,11 @@
             opacity: 0.045;
         }
 
-        /* Volume control */
+        /* Volume mute toggle */
         #vol-btn {
             position: absolute;
             bottom: max(22px, env(safe-area-inset-bottom));
-            left: 22px;
+            right: 68px;
             z-index: 40;
             width: 36px; height: 36px;
             background: rgba(0,0,0,0.38);
@@ -66,48 +66,6 @@
         }
         #vol-btn:hover { border-color: rgba(255,255,255,0.22); }
         #vol-btn svg { width: 16px; height: 16px; }
-
-        #vol-panel {
-            position: absolute;
-            bottom: max(68px, calc(env(safe-area-inset-bottom) + 46px));
-            left: 14px;
-            z-index: 40;
-            background: rgba(0,0,0,0.55);
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 20px;
-            padding: 14px 10px;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            isolation: isolate;
-            backdrop-filter: none; -webkit-backdrop-filter: none;
-        }
-        #vol-panel.open { display: flex; }
-        #vol-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            writing-mode: vertical-lr;
-            direction: rtl;
-            width: 4px; height: 80px;
-            background: rgba(200,180,150,0.25);
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-        }
-        #vol-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 14px; height: 14px;
-            border-radius: 50%;
-            background: rgba(220,200,170,0.85);
-            cursor: pointer;
-        }
-        #vol-slider::-moz-range-thumb {
-            width: 14px; height: 14px;
-            border-radius: 50%;
-            background: rgba(220,200,170,0.85);
-            border: none; cursor: pointer;
-        }
         #exit-btn {
             position: absolute;
             bottom: env(safe-area-inset-bottom, 22px);
@@ -253,16 +211,13 @@
     <!-- Exit button (during play) -->
     <button id="exit-btn">Exit</button>
 
-    <!-- Volume control — always visible -->
-    <button id="vol-btn" aria-label="Volume">
+    <!-- Mute toggle — always visible -->
+    <button id="vol-btn" aria-label="Mute">
         <svg id="vol-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(210,190,165,0.70)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
             <path id="vol-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
         </svg>
     </button>
-    <div id="vol-panel">
-        <input id="vol-slider" type="range" min="0" max="100" value="80" orient="vertical">
-    </div>
 
     <!-- Start -->
     <div id="start-screen">
@@ -1540,8 +1495,8 @@ const SoundEngine = {
         const fadeIn = setInterval(() => {
             step++;
             const base = isMuted ? 0 : masterVolume;
-            if (this._bubblesEl) this._bubblesEl.volume = Math.min(step*0.008, base*0.15);  // bubbles quiet bg
-            if (this._musicEl)   this._musicEl.volume   = Math.min(step*0.020, base*0.65);  // music loud & clear
+            if (this._bubblesEl) this._bubblesEl.volume = Math.min(step*0.005, base*0.08);  // very quiet bg
+            if (this._musicEl)   this._musicEl.volume   = Math.min(step*0.020, base*0.65);  // music prominent
             if (step >= 35) clearInterval(fadeIn);
         }, 80);
 
@@ -1553,7 +1508,7 @@ const SoundEngine = {
     _applyAll() {
         if (!this.on) return;
         const base = isMuted ? 0 : masterVolume;
-        if (this._bubblesEl) this._bubblesEl.volume = base * 0.15;
+        if (this._bubblesEl) this._bubblesEl.volume = base * 0.08;
         if (this._musicEl)   this._musicEl.volume   = base * 0.65;
     },
 
@@ -1576,7 +1531,7 @@ const SoundEngine = {
         if (!this._popEl || isMuted) return;
         try {
             const s = this._popEl.cloneNode();
-            s.volume = (0.35 + Math.random()*0.15) * masterVolume;  // lower pop
+            s.volume = (0.18 + Math.random()*0.10) * masterVolume;
             s.play().catch(()=>{});
         } catch(e){}
     },
@@ -1592,33 +1547,29 @@ const SoundEngine = {
 };
 
 /* ================================================
-   VOLUME CONTROL — UI
+   VOLUME CONTROL — mute toggle only
 ================================================ */
 function _applyVolume() {
     const base = isMuted ? 0 : masterVolume;
-    if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.volume = base * 0.15;
+    if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.volume = base * 0.08;
     if (SoundEngine._musicEl)   SoundEngine._musicEl.volume   = base * 0.65;
     // Update icon
     const waves = document.getElementById('vol-waves');
     const icon  = document.getElementById('vol-icon');
-    if (isMuted || v === 0) {
+    if (isMuted) {
         waves.style.display = 'none';
-        // Add muted X line if not present
-        let mx = icon.querySelector('#vol-x');
-        if (!mx) {
-            mx = document.createElementNS('http://www.w3.org/2000/svg','line');
-            mx.setAttribute('id','vol-x');
-            mx.setAttribute('x1','23'); mx.setAttribute('y1','9');
-            mx.setAttribute('x2','17'); mx.setAttribute('y2','15');
-            mx.setAttribute('stroke','rgba(210,190,165,0.70)');
-            mx.setAttribute('stroke-width','1.8');
-            mx.setAttribute('stroke-linecap','round');
-            icon.appendChild(mx);
-            const mx2 = mx.cloneNode();
-            mx2.setAttribute('id','vol-x2');
-            mx2.setAttribute('x1','17'); mx2.setAttribute('y1','9');
-            mx2.setAttribute('x2','23'); mx2.setAttribute('y2','15');
-            icon.appendChild(mx2);
+        if (!icon.querySelector('#vol-x')) {
+            ['9,9,15,15','15,9,9,15'].forEach((pts,i) => {
+                const ln = document.createElementNS('http://www.w3.org/2000/svg','line');
+                const [x1,y1,x2,y2] = pts.split(',');
+                ln.setAttribute('id', i===0?'vol-x':'vol-x2');
+                ln.setAttribute('x1',x1); ln.setAttribute('y1',y1);
+                ln.setAttribute('x2',x2); ln.setAttribute('y2',y2);
+                ln.setAttribute('stroke','rgba(210,190,165,0.70)');
+                ln.setAttribute('stroke-width','1.8');
+                ln.setAttribute('stroke-linecap','round');
+                icon.appendChild(ln);
+            });
         }
     } else {
         waves.style.display = '';
@@ -1628,27 +1579,8 @@ function _applyVolume() {
 
 document.getElementById('vol-btn').addEventListener('click', e => {
     e.stopPropagation();
-    const panel = document.getElementById('vol-panel');
-    panel.classList.toggle('open');
-});
-
-document.getElementById('vol-slider').addEventListener('input', e => {
-    masterVolume = parseInt(e.target.value) / 100;
-    isMuted = masterVolume === 0;
-    _applyVolume();
-});
-
-// Tap speaker icon itself to toggle mute
-document.getElementById('vol-btn').addEventListener('dblclick', e => {
-    e.stopPropagation();
     isMuted = !isMuted;
-    document.getElementById('vol-slider').value = isMuted ? 0 : masterVolume * 100;
     _applyVolume();
-});
-
-// Close panel when tapping elsewhere
-document.addEventListener('click', () => {
-    document.getElementById('vol-panel').classList.remove('open');
 });
 
 function drawCounter(ctx) {
@@ -1743,6 +1675,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
         document.getElementById('start-screen').addEventListener('click', startGame);
         document.getElementById('end-screen').addEventListener('click', ()=>{ if(gs===GS.END) startGame(); });
         document.getElementById('exit-btn').addEventListener('click', e=>{ e.stopPropagation(); goHome(); });
+
+        // Start audio on very first interaction — plays through main screen too
+        const _startAudio = () => { SoundEngine.resume(); };
+        document.getElementById('start-screen').addEventListener('click', _startAudio, {once:true});
+        canvas.addEventListener('touchend', _startAudio, {once:true});
+        canvas.addEventListener('click', _startAudio, {once:true});
 
         // counter drawn on canvas
         loop();
