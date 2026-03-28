@@ -47,11 +47,11 @@
             opacity: 0.045;
         }
 
-        /* Volume mute toggle */
+        /* Volume mute toggle — bottom right */
         #vol-btn {
             position: absolute;
             bottom: max(22px, env(safe-area-inset-bottom));
-            right: 68px;
+            right: 22px;
             z-index: 40;
             width: 36px; height: 36px;
             background: rgba(0,0,0,0.38);
@@ -66,11 +66,12 @@
         }
         #vol-btn:hover { border-color: rgba(255,255,255,0.22); }
         #vol-btn svg { width: 16px; height: 16px; }
+
+        /* Exit button — bottom left */
         #exit-btn {
             position: absolute;
-            bottom: env(safe-area-inset-bottom, 22px);
             bottom: max(22px, env(safe-area-inset-bottom));
-            right: 22px;
+            left: 22px;
             z-index: 10;
             display: none;
             background: rgba(0,0,0,0.40);
@@ -1247,6 +1248,22 @@ function updateBubbles(W, H) {
     bubbles = bubbles.filter(b => !(b.fadingOut && b.alpha <= 0));
     if (bubbles.length < had && !bubbles.find(b=>b.id===badId)) ensureBadBubble();
 
+    // Counter exclusion zone — push bubbles away from top-left
+    const cZoneW = 160, cZoneH = 115;
+    bubbles.forEach(b => {
+        if (b.fadingOut) return;
+        const nearX = Math.max(0, Math.min(b.x, cZoneW));
+        const nearY = Math.max(0, Math.min(b.y, cZoneH));
+        const dx = b.x - nearX, dy = b.y - nearY;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 0.01;
+        if (dist < b.r + 8) {
+            const push = (b.r + 8 - dist) * 0.15;
+            b.x += (dx/dist) * push;
+            b.y += (dy/dist) * push;
+            if (b.x < cZoneW && b.y < cZoneH) b.vx += 0.3;
+        }
+    });
+
     // Soft separation
     for (let i=0;i<bubbles.length;i++) {
         for (let j=i+1;j<bubbles.length;j++) {
@@ -1425,7 +1442,7 @@ function goHome() {
     document.getElementById('end-screen').classList.remove('show','fade');
     document.getElementById('end-screen').style.display = 'none';
     document.getElementById('start-screen').style.display = 'flex';
-    SoundEngine.fadeOut(0.8);
+    SoundEngine.fadeOut(0.8);  // fades bubbles only, music continues
     for (let i=0;i<6;i++) bubbles.push(mkBubble(W, H, true));
 }
 
@@ -1515,14 +1532,14 @@ const SoundEngine = {
     _setVol(v) { this._applyAll(); },
 
     fadeOut(sec) {
-        const bStart = this._bubblesEl ? this._bubblesEl.volume : 0;
-        const mStart = this._musicEl   ? this._musicEl.volume   : 0;
+        // Only fade bubbles — music plays continuously at all times
+        if (!this._bubblesEl) return;
+        const bStart = this._bubblesEl.volume;
         const steps = Math.max(1, sec * 20);
         let n = 0;
         const t = setInterval(() => {
             n++;
             if (this._bubblesEl) this._bubblesEl.volume = Math.max(0, bStart*(1-n/steps));
-            if (this._musicEl)   this._musicEl.volume   = Math.max(0, mStart*(1-n/steps));
             if (n >= steps) clearInterval(t);
         }, 1000/20);
     },
