@@ -1540,9 +1540,9 @@ const SoundEngine = {
         const fadeIn = setInterval(() => {
             step++;
             const base = isMuted ? 0 : masterVolume;
-            if (this._bubblesEl) this._bubblesEl.volume = Math.min(step*0.012, base*0.28);
-            if (this._musicEl)   this._musicEl.volume   = Math.min(step*0.008, base*0.18);
-            if (step >= 25) clearInterval(fadeIn);
+            if (this._bubblesEl) this._bubblesEl.volume = Math.min(step*0.008, base*0.15);  // bubbles quiet bg
+            if (this._musicEl)   this._musicEl.volume   = Math.min(step*0.020, base*0.65);  // music loud & clear
+            if (step >= 35) clearInterval(fadeIn);
         }, 80);
 
         // Preload one-shot sounds
@@ -1553,8 +1553,8 @@ const SoundEngine = {
     _applyAll() {
         if (!this.on) return;
         const base = isMuted ? 0 : masterVolume;
-        if (this._bubblesEl) this._bubblesEl.volume = base * 0.28;
-        if (this._musicEl)   this._musicEl.volume   = base * 0.18;
+        if (this._bubblesEl) this._bubblesEl.volume = base * 0.15;
+        if (this._musicEl)   this._musicEl.volume   = base * 0.65;
     },
 
     _setVol(v) { this._applyAll(); },
@@ -1576,7 +1576,7 @@ const SoundEngine = {
         if (!this._popEl || isMuted) return;
         try {
             const s = this._popEl.cloneNode();
-            s.volume = (0.6 + Math.random()*0.2) * masterVolume;
+            s.volume = (0.35 + Math.random()*0.15) * masterVolume;  // lower pop
             s.play().catch(()=>{});
         } catch(e){}
     },
@@ -1585,7 +1585,7 @@ const SoundEngine = {
         if (!this._fartEl || isMuted) return;
         try {
             const s = this._fartEl.cloneNode();
-            s.volume = 0.9 * masterVolume;
+            s.volume = 0.70 * masterVolume;  // fart slightly lower
             s.play().catch(()=>{});
         } catch(e){}
     },
@@ -1596,8 +1596,8 @@ const SoundEngine = {
 ================================================ */
 function _applyVolume() {
     const base = isMuted ? 0 : masterVolume;
-    if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.volume = base * 0.28;
-    if (SoundEngine._musicEl)   SoundEngine._musicEl.volume   = base * 0.18;
+    if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.volume = base * 0.15;
+    if (SoundEngine._musicEl)   SoundEngine._musicEl.volume   = base * 0.65;
     // Update icon
     const waves = document.getElementById('vol-waves');
     const icon  = document.getElementById('vol-icon');
