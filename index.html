@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Bad Bubble</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -13,2304 +13,1593 @@
             overflow: hidden;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
-            background: #0a0a14;
-            font-family: 'Nunito', sans-serif;
+            background: #0a0908;
+            font-family: 'Cormorant Garamond', Georgia, serif;
         }
 
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        body { margin: 0; padding: 0; }
 
-        /* ============================================
-           GAME CONTAINER
-        ============================================ */
         #game-container {
-            position: relative;
-            width: min(92vw, 420px);
-            height: min(92vh, 740px);
-            border-radius: 28px;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background: #0e1828;
-            box-shadow: 0 0 60px rgba(0,0,0,0.8);
+            background: #0a0908;
         }
 
-        /* ============================================
-           SCORE
-        ============================================ */
-        #score-display {
-            position: absolute;
-            top: 18px;
-            right: 22px;
-            width: 44px;
-            height: 44px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Fredoka One', cursive;
-            font-size: 1.2rem;
-            color: #fff;
-            z-index: 10;
-            border: 2px solid rgba(255,255,255,0.15);
-        }
-
-        /* ============================================
-           PLAY AREA
-        ============================================ */
-        #play-area {
+        #main-canvas {
             position: absolute;
             top: 0; left: 0;
-            width: 100%; height: 100%;
-        }
-
-        /* ============================================
-           CANVAS for bottle + cloud
-        ============================================ */
-        #scene-canvas {
-            position: absolute;
-            bottom: 0; left: 0;
-            width: 100%; height: 32%;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        #lightning-canvas {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 20;
-        }
-
-        /* ============================================
-           BUBBLES
-        ============================================ */
-        .bubble {
-            position: absolute;
-            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            display: block;
             cursor: pointer;
-            z-index: 5;
-            will-change: left, top;
-            transition: none;
         }
 
-        .bubble:hover { filter: brightness(1.2); }
-        .bubble:active { filter: brightness(0.85); }
-
-        .bubble.popping {
-            animation: popBubble 0.3s ease-out forwards;
-            pointer-events: none;
-        }
-
-        @keyframes popBubble {
-            0% { transform: scale(1); opacity: 1; }
-            40% { transform: scale(1.5); opacity: 0.7; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-
-        /* Organic breathing wobble — layered on top of JS position */
-        @keyframes bubbleBreath {
-            0%   { transform: scale(1)    rotate(0deg);   }
-            25%  { transform: scale(1.04) rotate(1.5deg); }
-            50%  { transform: scale(0.97) rotate(-1deg);  }
-            75%  { transform: scale(1.03) rotate(0.8deg); }
-            100% { transform: scale(1)    rotate(0deg);   }
-        }
-        .bubble.breathing {
-            animation: bubbleBreath var(--breath-dur, 3.5s) ease-in-out infinite;
-            animation-delay: var(--breath-delay, 0s);
-        }
-        /* Override so popping animation always wins */
-        .bubble.popping, .bubble.chain-pop {
-            animation: popBubble 0.3s ease-out forwards !important;
-        }
-
-        .bubble.chain-pop {
-            animation: chainPop 0.2s ease-out forwards;
-            pointer-events: none;
-        }
-
-        @keyframes chainPop {
-            0% { transform: scale(1); opacity: 1; }
-            30% { transform: scale(1.3); opacity: 0.8; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-
-        /* ============================================
-           SPLAT PARTICLES
-        ============================================ */
-        .splat-particle {
+        /* Grain overlay */
+        #grain {
             position: absolute;
-            border-radius: 50%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 30;
             pointer-events: none;
-            z-index: 6;
-            animation: splatFly var(--duration) ease-out forwards;
+            opacity: 0.045;
         }
 
-        @keyframes splatFly {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--tx), var(--ty)) scale(0.2); opacity: 0; }
-        }
-
-        .shockwave {
+        /* Exit button (during play) */
+        #exit-btn {
             position: absolute;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 7;
-            border: 3px solid rgba(255,255,255,0.9);
-            transform: translate(-50%, -50%) scale(0);
-            animation: shockwaveExpand 0.6s ease-out forwards;
+            bottom: env(safe-area-inset-bottom, 22px);
+            bottom: max(22px, env(safe-area-inset-bottom));
+            right: 22px;
+            z-index: 10;
+            display: none;
+            background: rgba(0,0,0,0.40);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(210,190,165,0.65);
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 0.68rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            isolation: isolate;
         }
+        #exit-btn:hover { color: rgba(220,200,175,0.9); border-color: rgba(255,255,255,0.25); }
 
-        @keyframes shockwaveExpand {
-            0%   { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-            60%  { opacity: 0.6; }
-            100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
-        }
-
-        /* ============================================
-           MAIN / START SCREEN
-        ============================================ */
+        /* Start screen */
         #start-screen {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            inset: 0;
+            z-index: 20;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            padding-top: 60px;
-            z-index: 100;
-            background: #0e1828;
+            justify-content: center;
+            cursor: pointer;
+            background: rgba(14,12,10,0.52);
         }
 
-        #start-screen canvas {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-        }
-
-        .start-content {
-            position: relative;
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            padding: 0 24px;
-        }
-
-        .game-title {
-            font-family: 'Fredoka One', cursive;
-            font-size: 3rem;
-            color: #fff;
-            letter-spacing: 2px;
+        .start-title {
+            font-size: 2.8rem;
+            font-weight: 300;
+            font-style: italic;
+            color: rgba(235,218,195,0.98);
+            letter-spacing: 5px;
+            text-transform: uppercase;
             margin-bottom: 10px;
-            text-shadow: 0 0 30px rgba(255,255,255,0.3);
+            text-shadow: 0 0 30px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,1);
         }
 
-        .game-tagline {
-            font-size: 1.15rem;
-            color: rgba(255,255,255,0.65);
-            margin-bottom: 64px;
-            text-align: center;
-            line-height: 1.6;
-        }
-
-        .pick-label {
-            font-family: 'Fredoka One', cursive;
-            font-size: 1.1rem;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 20px;
-            letter-spacing: 1px;
-        }
-
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            width: 100%;
-            max-width: 320px;
-            margin-bottom: 30px;
-        }
-
-        .color-option {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-
-        .color-circle {
-            width: 58px;
-            height: 58px;
-            border-radius: 50%;
-            border: 3px solid transparent;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.08);
-            animation: circlePulse 3s ease-in-out infinite;
-            animation-delay: var(--pulse-delay, 0s);
-        }
-
-        @keyframes circlePulse {
-            0%, 100% { transform: scale(1); }
-            50%       { transform: scale(1.07); }
-        }
-
-        .color-circle.is-dark {
-            border-color: rgba(255,255,255,0.2);
-        }
-
-        .color-option:hover .color-circle {
-            transform: scale(1.12);
-            border-color: rgba(255,255,255,0.5);
-        }
-
-        .color-option:active .color-circle {
-            transform: scale(0.95);
-        }
-
-        .color-name {
-            font-size: 0.65rem;
-            color: rgba(255,255,255,0.5);
-            letter-spacing: 0.5px;
+        .start-sub {
+            font-size: 0.85rem;
+            font-weight: 300;
+            color: rgba(210,190,162,0.92);
+            letter-spacing: 4px;
             text-transform: uppercase;
+            margin-bottom: 72px;
+            text-shadow: 0 1px 10px rgba(0,0,0,1);
         }
 
-        .luna-credit {
+        .start-prompt {
             font-size: 0.75rem;
-            color: rgba(255,255,255,0.25);
-            letter-spacing: 1px;
+            font-weight: 300;
+            color: rgba(215,195,165,0.80);
+            letter-spacing: 5px;
             text-transform: uppercase;
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
+            animation: breathe 3.5s ease-in-out infinite;
+            text-shadow: 0 1px 8px rgba(0,0,0,1);
         }
 
-        #credits-button {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            font-size: 0.7rem;
-            color: rgba(255,255,255,0.25);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-family: 'Nunito', sans-serif;
-            padding: 4px 8px;
-            z-index: 3;
-            transition: color 0.2s ease;
+        @keyframes breathe {
+            0%, 100% { opacity: 0.32; }
+            50% { opacity: 0.72; }
         }
-        #credits-button:hover { color: rgba(255,255,255,0.6); }
 
-        #credits-overlay {
+        /* End screen */
+        #end-screen {
             position: absolute;
             inset: 0;
-            background: rgba(10,12,20,0.92);
-            backdrop-filter: blur(12px);
-            z-index: 200;
+            z-index: 20;
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px 32px;
-            gap: 0;
-        }
-        #credits-overlay.visible { display: flex; }
-
-        .credits-title {
-            font-family: 'Fredoka One', cursive;
-            font-size: 1.3rem;
-            color: rgba(255,255,255,0.9);
-            margin-bottom: 28px;
-            letter-spacing: 2px;
-        }
-
-        .credits-section-label {
-            font-size: 0.6rem;
-            color: rgba(255,255,255,0.35);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-            margin-top: 20px;
-            align-self: flex-start;
-        }
-
-        .credits-entry {
-            align-self: flex-start;
-            margin-bottom: 6px;
-        }
-
-        .credits-entry a {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.85rem;
-            text-decoration: none;
-            font-family: 'Nunito', sans-serif;
-            line-height: 1.6;
-            transition: color 0.2s ease;
-        }
-        .credits-entry a:hover { color: #fff; }
-
-        .credits-entry span {
-            color: rgba(255,255,255,0.4);
-            font-size: 0.8rem;
-            font-family: 'Nunito', sans-serif;
-            display: block;
-            line-height: 1.4;
-        }
-
-        #credits-close {
-            margin-top: 32px;
-            background: rgba(255,255,255,0.1);
-            border: 1.5px solid rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.8);
-            font-family: 'Nunito', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 700;
-            padding: 10px 36px;
-            border-radius: 24px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        #credits-close:hover { background: rgba(255,255,255,0.2); color: #fff; }
-
-        /* ============================================
-           GAME OVER SCREEN
-        ============================================ */
-        #game-over-screen {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding-top: 0;
-            z-index: 100;
             opacity: 0;
-            transition: opacity 0.6s ease, background 0.6s ease;
-            overflow: hidden;
+            transition: opacity 1.6s ease;
+            cursor: pointer;
+            background: rgba(14,12,10,0.52);
         }
+        #end-screen.show { display: flex; }
+        #end-screen.fade { opacity: 1; }
 
-        #game-over-screen.visible {
-            display: flex;
-            opacity: 1;
-        }
-
-        /* Floating bubbles canvas behind card */
-        #end-bubbles-canvas {
-            position: absolute;
-            inset: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .cloud-card {
-            position: relative;
-            width: 290px;
-            min-height: 220px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 44px 28px 32px;
-            margin-bottom: 28px;
-            z-index: 2;
-            border-radius: 28px;
-            background: rgba(255,255,255,0.12);
-            backdrop-filter: blur(18px);
-            border: 1.5px solid rgba(255,255,255,0.25);
-            box-shadow: 0 8px 40px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.1);
-        }
-
-        .cloud-card-content {
-            position: relative;
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-
-        .game-over-title {
-            font-family: 'Fredoka One', cursive;
-            font-size: 1.5rem;
-            color: #ffffff;
-            text-align: center;
-            line-height: 1.25;
-            margin-bottom: 20px;
-            text-shadow: 0 2px 12px rgba(0,0,0,0.3);
-            letter-spacing: 1px;
-        }
-
-        .score-row {
-            display: flex;
-            gap: 32px;
-            margin-bottom: 4px;
-            align-items: flex-end;
-        }
-
-        .score-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .score-label {
-            font-size: 0.65rem;
-            color: rgba(255,255,255,0.6);
+        .end-popped {
+            font-size: 1.0rem;
+            font-weight: 300;
+            color: rgba(205,185,158,0.85);
+            letter-spacing: 5px;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 2px;
-            font-weight: 700;
+            margin-bottom: 14px;
+            text-shadow: 0 1px 10px rgba(0,0,0,1);
         }
 
-        .score-value {
-            font-family: 'Fredoka One', cursive;
-            font-size: 2.4rem;
-            color: #ffffff;
+        .end-number {
+            font-size: 7rem;
+            font-weight: 300;
+            color: rgba(235,215,185,0.98);
             line-height: 1;
-            text-shadow: 0 0 20px rgba(255,255,255,0.4);
-        }
-
-        .score-item.best .score-value {
-            font-size: 1.8rem;
-            color: rgba(255,255,255,0.75);
-        }
-
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .game-button {
-            padding: 13px 44px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            letter-spacing: 0.5px;
-            min-width: 180px;
-        }
-
-        .game-button.primary {
-            background: rgba(255,255,255,0.92);
-            color: #222;
-        }
-
-        .game-button.secondary {
-            background: rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.9);
-            border: 1.5px solid rgba(255,255,255,0.3);
-            backdrop-filter: blur(8px);
-        }
-
-        .game-button:hover { transform: scale(1.04); }
-        .game-button:active { transform: scale(0.96); }
-
-        /* EXIT button */
-        #exit-button {
-            position: absolute;
-            bottom: 24px;
-            left: 20px;
-            background: rgba(0,0,0,0.5);
-            color: rgba(255,255,255,0.7);
-            border: 1.5px solid rgba(255,255,255,0.2);
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 0.78rem;
-            font-weight: 700;
-            cursor: pointer;
-            z-index: 10;
-            display: none;
-            letter-spacing: 0.5px;
-            transition: all 0.2s ease;
-        }
-        #exit-button:hover { background: rgba(0,0,0,0.7); color: #fff; }
-
-
-        .combo-float {
-            position: absolute;
-            font-family: 'Fredoka One', cursive;
-            font-size: 1.1rem;
-            font-weight: 900;
-            pointer-events: none;
-            z-index: 12;
-            animation: comboRise 0.9s ease-out forwards;
-        }
-
-        @keyframes comboRise {
-            0%   { transform: translateY(0) scale(0.6); opacity: 1; }
-            30%  { transform: translateY(-18px) scale(1.2); opacity: 1; }
-            100% { transform: translateY(-55px) scale(0.9); opacity: 0; }
-        }
-
-        /* Score bounce */
-        @keyframes scoreBounce {
-            0%   { transform: scale(1); }
-            30%  { transform: scale(1.5); }
-            60%  { transform: scale(0.9); }
-            100% { transform: scale(1); }
-        }
-        .score-bounce { animation: scoreBounce 0.35s ease-out; }
-
-        /* Screen shake */
-        @keyframes screenShake {
-            0%   { transform: translate(0,0) rotate(0); }
-            15%  { transform: translate(-6px, 3px) rotate(-0.5deg); }
-            30%  { transform: translate(5px, -4px) rotate(0.4deg); }
-            45%  { transform: translate(-4px, 2px) rotate(-0.3deg); }
-            60%  { transform: translate(3px, -2px) rotate(0.2deg); }
-            75%  { transform: translate(-2px, 1px) rotate(-0.1deg); }
-            100% { transform: translate(0,0) rotate(0); }
-        }
-        .shake { animation: screenShake 0.5s ease-out; }
-
-        /* Timer ring */
-        #timer-ring {
-            position: absolute;
-            top: 10px;
-            right: 14px;
-            width: 60px;
-            height: 60px;
-            pointer-events: none;
-            z-index: 11;
-            display: none;
-        }
-
-        /* Color best scores on main screen */
-        .color-best {
-            font-size: 0.6rem;
-            color: rgba(255,255,255,0.6);
-            font-family: 'Fredoka One', cursive;
-            min-height: 12px;
-        }
-
-        /* Locked scene */
-        .color-circle.locked {
-            filter: grayscale(0.7) brightness(0.5);
-            position: relative;
-        }
-        .lock-icon {
-            font-size: 1.1rem;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        .color-option-wrap {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-        }
-
-        /* Typewriter + bubble dissolve */
-        #typewriter-overlay {
-            position: absolute;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            pointer-events: none;
-            flex-direction: column;
-        }
-
-        #typewriter-overlay.visible {
-            display: flex;
-        }
-
-        #typewriter-text {
-            font-family: 'Fredoka One', cursive;
-            font-size: 1.7rem;
-            color: rgba(255,255,255,0.92);
-            text-align: center;
-            text-shadow: 0 0 24px rgba(255,255,255,0.3);
             letter-spacing: 3px;
-            padding: 0 32px;
-            transition: opacity 0.4s ease;
+            margin-bottom: 12px;
+            text-shadow: 0 0 40px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,1);
         }
 
-        .text-bubble {
-            position: absolute;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: textBubbleRise var(--dur) ease-out forwards;
+        .end-best-line {
+            font-size: 0.90rem;
+            font-weight: 300;
+            color: rgba(195,175,148,0.72);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 70px;
+            text-shadow: 0 1px 8px rgba(0,0,0,1);
         }
 
-        @keyframes textBubbleRise {
-            0%   { transform: translate(0, 0) scale(0.3); opacity: 0.9; }
-            20%  { opacity: 1; transform: translate(var(--dx1), -20px) scale(1); }
-            100% { transform: translate(var(--dx2), -180px) scale(0.5); opacity: 0; }
+        .end-again {
+            font-size: 0.80rem;
+            font-weight: 300;
+            color: rgba(210,190,162,0.65);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            animation: breathe 3.5s ease-in-out infinite;
+            text-shadow: 0 1px 8px rgba(0,0,0,1);
         }
-
-        /* Typewriter flash overlay */
-        #streak-flash { position: absolute; inset: 0; pointer-events: none; z-index: 8; opacity: 0; border-radius: 28px; transition: opacity 0.1s ease; }
-        #stats-button { position: absolute; bottom: 14px; left: 20px; width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(ellipse 40% 35% at 30% 22%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.15) 45%, transparent 70%), radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.18) 0%, rgba(200,220,255,0.10) 100%); border: 1.5px solid rgba(255,255,255,0.28); box-shadow: 0 0 10px rgba(255,255,255,0.1), 0 3px 8px rgba(0,0,0,0.3); color: rgba(255,255,255,0.80); font-size: 0.85rem; font-family: 'Fredoka One', cursive; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; padding: 0; backdrop-filter: blur(4px); transition: transform 0.15s ease; }
-        #stats-button:hover { transform: scale(1.1); } #stats-button:active { transform: scale(0.93); }
-        #stats-overlay { position: absolute; inset: 0; background: rgba(10,12,20,0.92); backdrop-filter: blur(14px); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 32px; gap: 0; border-radius: 28px; }
-        #stats-overlay.visible { display: flex; }
-        .stats-title { font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: rgba(255,255,255,0.9); margin-bottom: 24px; letter-spacing: 2px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; margin-bottom: 6px; }
-        .stats-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-        .stats-card-label { font-size: 0.58rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1.5px; }
-        .stats-card-value { font-family: 'Fredoka One', cursive; font-size: 1.5rem; color: #fff; line-height: 1; }
-        .stats-section-label { font-size: 0.6rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px; align-self: flex-start; }
-        .stats-color-row { display: flex; align-items: center; width: 100%; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .stats-color-row:last-child { border-bottom: none; }
-        .stats-color-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-        .stats-color-name { flex: 1; margin-left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.65); font-family: 'Nunito', sans-serif; }
-        .stats-color-best { font-family: 'Fredoka One', cursive; font-size: 0.95rem; color: rgba(255,255,255,0.85); }
-        .stats-reset-btn { margin-top: 22px; background: rgba(255,80,80,0.15); border: 1.5px solid rgba(255,80,80,0.35); color: rgba(255,140,140,0.9); font-family: 'Nunito', sans-serif; font-size: 0.8rem; font-weight: 700; padding: 9px 28px; border-radius: 24px; cursor: pointer; transition: all 0.2s; }
-        .stats-reset-btn:hover { background: rgba(255,80,80,0.28); color: #fff; }
-        .stats-close-btn { margin-top: 10px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 700; padding: 10px 36px; border-radius: 24px; cursor: pointer; transition: all 0.2s; }
-        .stats-close-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
     </style>
 </head>
 <body>
 <div id="game-container">
-    <div id="score-display">0</div>
-    <div id="streak-flash"></div>
-    <div id="typewriter-overlay">
-        <div id="typewriter-text"></div>
-    </div>
-    <div id="timer-ring">
-        <svg width="60" height="60" viewBox="0 0 60 60">
-            <circle cx="30" cy="30" r="28" fill="#0e1828"/>
-            <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
-            <circle id="timer-arc" cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.8)"
-                stroke-width="3.5" stroke-linecap="round"
-                stroke-dasharray="163" stroke-dashoffset="163"
-                transform="rotate(-90 30 30)"/>
-            <text id="pop-count-text" x="30" y="35" text-anchor="middle"
-                font-family="'Fredoka One', cursive" font-size="16" fill="white">0</text>
-        </svg>
-    </div>
-    <div id="play-area"></div>
-    <canvas id="scene-canvas"></canvas>
-    <canvas id="lightning-canvas"></canvas>
-    <button id="exit-button">EXIT</button>
+    <canvas id="main-canvas"></canvas>
 
-    <!-- START SCREEN -->
+    <!-- SVG grain texture -->
+    <svg id="grain" xmlns="http://www.w3.org/2000/svg" style="opacity:0.055">
+        <filter id="fn"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="4" stitchTiles="stitch"/>
+        <feColorMatrix type="saturate" values="0"/></filter>
+        <rect width="100%" height="100%" filter="url(#fn)"/>
+    </svg>
+
+    <!-- Exit button (during play) -->
+    <button id="exit-btn">Exit</button>
+
+    <!-- Start -->
     <div id="start-screen">
-        <canvas id="menu-bubbles-canvas"></canvas>
-        <div class="start-content">
-            <h1 class="game-title">Bad Bubble</h1>
-            <p class="game-tagline">Pop as many bubbles as you can before you find the bad one!</p>
-            <p class="pick-label">Pick a color</p>
-            <div class="color-grid" id="color-grid"></div>
-        </div>
-        <span class="luna-credit">@lunabellegames</span>
-        <button id="stats-button">ⓘ</button>
-        <button id="credits-button">Credits</button>
-    </div>
-    <div id="stats-overlay">
-        <div class="stats-title">Stats</div>
-        <div class="stats-grid" id="stats-summary-grid"></div>
-        <div class="stats-section-label">Best by Color</div>
-        <div id="stats-color-list" style="width:100%"></div>
-        <button class="stats-reset-btn" id="stats-reset-btn">Reset All Scores</button>
-        <button class="stats-close-btn" id="stats-close-btn">Close</button>
-    </div>
-    <!-- CREDITS OVERLAY -->
-    <div id="credits-overlay">
-        <div class="credits-title">Credits</div>
-
-        <div class="credits-section-label">Music</div>
-        <div class="credits-entry">
-            <a href="https://pixabay.com/users/xtremefreddy-32332307/" target="_blank">XtremeFreddy</a>
-            <span>Game Music Loop 6</span>
-            <span><a href="https://pixabay.com/users/xtremefreddy-32332307/" target="_blank">pixabay.com/users/xtremefreddy-32332307</a></span>
-        </div>
-
-        <div class="credits-section-label">Sound Effects</div>
-        <div class="credits-entry">
-            <span>Pop, chain pop &amp; sound effects via Pixabay</span>
-        </div>
-
-        <div class="credits-section-label">Made by</div>
-        <div class="credits-entry">
-            <a href="#">LunaBelleGames</a>
-        </div>
-
-        <button id="credits-close">Close</button>
+        <div class="start-title">Bad Bubble</div>
+        <div class="start-sub">find the one that ends it all</div>
+        <div class="start-prompt">touch to begin</div>
     </div>
 
-    <!-- GAME OVER SCREEN -->
-    <div id="game-over-screen">
-        <canvas id="end-bubbles-canvas"></canvas>
-        <div class="cloud-card">
-            <div class="cloud-card-content">
-                <div class="score-row">
-                    <div class="score-item">
-                        <span class="score-label">Score</span>
-                        <span class="score-value" id="final-score">0</span>
-                    </div>
-                    <div class="score-item best">
-                        <span class="score-label">Best</span>
-                        <span class="score-value" id="best-score">0</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="button-group" style="position:relative;z-index:2;">
-            <button class="game-button primary" id="play-again-button">Play Again</button>
-            <button class="game-button secondary" id="home-button">Home</button>
-        </div>
+    <!-- End -->
+    <div id="end-screen">
+        <div class="end-popped">you popped</div>
+        <div class="end-number" id="end-num">0</div>
+        <div class="end-best-line" id="end-best">best — 0</div>
+        <div class="end-again">touch to try again</div>
     </div>
 </div>
 
 <script>
-/* ============================================
-   COLOR SCENES
-============================================ */
-const SCENES = [
-    { id: 'yellow',  name: 'Yellow',  color: '#fcd831', dark: '#b89a00' },
-    { id: 'red',     name: 'Red',     color: '#f60000', dark: '#8a0000' },
-    { id: 'pink',    name: 'Pink',    color: '#cb6ce6', dark: '#7a2a96' },
-    { id: 'green',   name: 'Green',   color: '#7ed957', dark: '#3a8a1a' },
-    { id: 'violet',  name: 'Violet',  color: '#5e17eb', dark: '#2d0090' },
-    { id: 'blue',    name: 'Blue',    color: '#0cc0df', dark: '#006a80' },
-    { id: 'orange',  name: 'Orange',  color: '#f35329', dark: '#8a2000' },
-    { id: 'rainbow', name: 'Rainbow', color: '#rainbow', dark: '#1a1a2e', isRainbow: true },
-];
+'use strict';
 
-const BG_COLOR = '#0e1828';
-
-/* ============================================
-   CONFIG
-============================================ */
-const CONFIG = {
-    BUBBLE_COUNT: 101,
-    BUBBLE_SIZE_MIN: 30,
-    BUBBLE_SIZE_MAX: 46,
-    RESPAWN_DELAY: 0,
-    BAD_BUBBLE_DELAY: 0,
-    FLOAT_SPEED: 0.22,
-    WOBBLE_AMOUNT: 0.55,
-    WOBBLE_SPEED: 0.013,
-    COLLISION_PADDING: 6,
-    PUSH_STRENGTH: 0.5
+/* ================================================
+   PALETTE
+================================================ */
+const C = {
+    accent:     '#c07828',
+    accentDim:  '#6e4010',
+    silDark:    '#0e0d0c',
+    silMid:     '#181614',
+    ground:     '#111010',
+    bubTint:    [200, 185, 168],
 };
 
-/* ============================================
-   AUDIO
-============================================ */
-const AudioManager = {
-    sounds: {},
-    ready: false,          // true after first user gesture
-    menuTrack: null,
-    bubblesTrack: null,
+/* ================================================
+   SCENES — pre-baked once per game, stable each frame
+================================================ */
+let sceneBitmap = null;
+let menuBitmap  = null;
 
-    unlocked: false,
-    unlocking: null,
-    // Volume constants
-    MENU_MUSIC_VOL:   0.55,  // music.mp3 on menu/end screens
-    SCENE_BUBBLES_VOL: 0.42, // bubbles.mp3 during gameplay
-    MENU_BUBBLES_VOL:  0.07, // bubbles.mp3 barely audible on menu/end
+function bakeScene(W, H) {
+    // Heavily weighted toward space/atmospheric weirdness
+    const scenes = [
+        { fn: sceneSpaceCrash,  vents: [0.12, 0.55, 0.85] },  // avoid dish center
+        { fn: sceneSpaceCrash,  vents: [0.12, 0.55, 0.85] },
+        { fn: sceneSpaceMoon,   vents: [0.10, 0.45, 0.78] },  // spread left-heavy
+        { fn: sceneSpaceMoon,   vents: [0.10, 0.45, 0.78] },
+        { fn: sceneSpaceToxic,  vents: [0.15, 0.52, 0.88] },  // avoid rover center-left
+        { fn: sceneSpaceToxic,  vents: [0.15, 0.52, 0.88] },
+        { fn: sceneSpaceOrbit,  vents: [0.08, 0.42, 0.75] },  // avoid station center
+        { fn: sceneSpaceOrbit,  vents: [0.08, 0.42, 0.75] },
+        { fn: sceneWindFarm,    vents: [0.20, 0.60, 0.90] },  // between turbines
+        { fn: sceneForest,      vents: [0.15, 0.50, 0.82] },  // between pipes
+    ];
+    const s = scenes[Math.floor(Math.random() * scenes.length)];
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    s.fn(off.getContext('2d'), W, H);
+    sceneBitmap = off;
+    Vents.setPositions(s.vents);
+}
 
-    // Fade durations (ms)
-    FADE_MUSIC:   1500,
-    FADE_BUBBLES: 1500,
+function bakeMenuScene(W, H) {
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    sceneRuins(off.getContext('2d'), W, H);
+    menuBitmap = off;
+}
 
-    // Called on user gesture to "unlock" audio on mobile browsers / webviews.
-// Safe to call repeatedly; it will retry if the initial attempt was blocked.
-setup() {
-    if (this.unlocked) return Promise.resolve(true);
-    if (this.unlocking) return this.unlocking;
+/* ── RUINS — always the menu scene ─────────── */
+function sceneRuins(ctx, W, H) {
+    const sk = ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#2e2a24'); sk.addColorStop(0.55,'#3d382e'); sk.addColorStop(1,'#2a2520');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    _mountains(ctx,W,H,[[0,.60],[.10,.46],[.22,.54],[.36,.40],[.50,.52],[.63,.38],[.76,.50],[.88,.44],[1,.58]],'#35302a');
+    _mountains(ctx,W,H,[[0,.72],[.15,.62],[.30,.67],[.46,.60],[.62,.66],[.77,.60],[.92,.65],[1,.70]],'#28231e');
+    ctx.fillStyle=C.ground; ctx.fillRect(0,H*.80,W,H*.20);
+    _arch(ctx, W*.22, W*.56, H*.80, H*.40, 18);
+    ctx.fillStyle=C.silDark;
+    ctx.fillRect(W*.02, H*.52, 22, H*.28);
+    ctx.fillRect(W*.02-5, H*.50, 32, 8);
+    ctx.fillRect(W*.02+2, H*.46, 14, 8);
+    const cX=W*.76, cH=H*.30;
+    ctx.fillRect(cX-9, H*.80-cH, 18, cH);
+    ctx.fillRect(cX-14, H*.80-cH, 28, 8);
+    [[W*.60,6],[W*.66,5],[W*.72,7],[W*.80,4],[W*.84,5],[W*.10,5],[W*.16,4]].forEach(([rx,rh])=>ctx.fillRect(rx, H*.80-rh, 12, rh));
+    _bareTree(ctx, W*.10, H*.80, H*.34, 4, 4);
+    _bareTree(ctx, W*.88, H*.80, H*.28, 3, 3);
+    _bareTree(ctx, W*.04, H*.82, H*.18, 2, 3);
+    _groundShadows(ctx, W, H);
+}
 
-    // Create audio objects once
-    if (!this.menuTrack || !this.bubblesTrack) {
-        // Sound effects
-        this.sounds.pop      = new Audio('audio/pop.mp3');
-        this.sounds.fart     = new Audio('audio/fart.mp3');
-        this.sounds.chainpop = new Audio('audio/chainpop.mp3');
-        this.sounds.pop.volume      = 0.7;
-        this.sounds.fart.volume     = 0.9;
-        this.sounds.chainpop.volume = 0.15;
+/* ── SCENE 1 — DESOLATE PIPES ───────────────── */
+function sceneForest(ctx, W, H) {
+    const sk=ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#2c2824'); sk.addColorStop(0.5,'#3a3530'); sk.addColorStop(1,'#2a2620');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    _ruinSkyline(ctx,W,H,'#2e2a22',0.36,0.62);
+    _mountains(ctx,W,H,[[0,.78],[.14,.66],[.28,.71],[.43,.63],[.58,.69],[.73,.62],[.88,.67],[1,.74]],'#252220');
+    ctx.fillStyle=C.ground; ctx.fillRect(0,H*.82,W,H*.18);
+    _pipes(ctx, W, H, H*.82, Math.floor(Math.random()*99999));
+    _groundShadows(ctx, W, H);
+}
 
-        // Music track (menu + end screens)
-        this.menuTrack = new Audio('audio/music.mp3');
-        this.menuTrack.loop = true;
-        this.menuTrack.volume = 0;
+/* ── SCENE 2 — MISTY PIPES ──────────────────── */
+function sceneValley(ctx, W, H) {
+    const sk=ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#2a2822'); sk.addColorStop(0.5,'#38342e'); sk.addColorStop(1,'#2a2720');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    const mist=ctx.createLinearGradient(0,H*.50,0,H*.72);
+    mist.addColorStop(0,'rgba(70,64,55,0)'); mist.addColorStop(0.5,'rgba(70,64,55,0.25)'); mist.addColorStop(1,'rgba(70,64,55,0)');
+    ctx.fillStyle=mist; ctx.fillRect(0,H*.50,W,H*.22);
+    _ruinSkyline(ctx,W,H,'#2e2a22',0.32,0.58);
+    _mountains(ctx,W,H,[[0,.72],[.14,.62],[.30,.66],[.46,.59],[.62,.65],[.76,.59],[.90,.65],[1,.71]],'#262320');
+    ctx.fillStyle=C.ground; ctx.fillRect(0,H*.82,W,H*.18);
+    _pipes(ctx, W, H, H*.82, Math.floor(Math.random()*99999));
+    _groundShadows(ctx, W, H);
+}
 
-        // Bubbles track (all screens, always looping — just changes volume)
-        this.bubblesTrack = new Audio('audio/bubbles.mp3');
-        this.bubblesTrack.loop = true;
-        this.bubblesTrack.volume = 0;
+/* ── SCENE 3 — TOWER + PIPES ────────────────── */
+function sceneTower(ctx, W, H) {
+    const sk=ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#2b2822'); sk.addColorStop(0.6,'#38332b'); sk.addColorStop(1,'#2a2620');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    _ruinSkyline(ctx,W,H,'#2e2a22',0.34,0.62);
+    ctx.fillStyle=C.ground; ctx.fillRect(0,H*.80,W,H*.20);
+    const tX=W*.65, tW=W*.15, tH=H*.54;
+    ctx.fillStyle=C.silDark;
+    ctx.fillRect(tX-tW/2, H*.80-tH, tW, tH);
+    const mW=tW/5;
+    for(let i=0;i<5;i++){
+        if(i===2) continue;
+        const mh=i===1?tH*.05:tH*.09;
+        ctx.fillRect(tX-tW/2+i*mW, H*.80-tH-mh, mW*.72, mh);
+    }
+    ctx.fillStyle='#0b0a09'; ctx.fillRect(tX-4, H*.80-tH*.64, 8, 18);
+    ctx.strokeStyle='#0f0e0c'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(tX+tW*.2,H*.80-tH*.85); ctx.lineTo(tX+tW*.28,H*.80-tH*.62); ctx.lineTo(tX+tW*.22,H*.80-tH*.42); ctx.stroke();
+    [[tX+tW*.5+4,H*.80,13,6],[tX+tW*.5+18,H*.80,9,5],[tX-tW*.5-10,H*.80,11,5]].forEach(([rx,ry,rw,rh])=>ctx.fillRect(rx,ry-rh,rw,rh));
+    ctx.fillStyle=C.silDark;
+    ctx.fillRect(W*.04, H*.57, 16, H*.23);
+    ctx.fillRect(W*.04-4, H*.55, 24, 7);
+    _pipes(ctx, W, H, H*.80, Math.floor(Math.random()*99999));
+    _groundShadows(ctx, W, H);
+}
 
-        // Helps iOS/Android treat this as "music" and avoid weird routing.
-        // Not supported everywhere, so guard it.
-        try { this.menuTrack.preload = 'auto'; this.bubblesTrack.preload = 'auto'; } catch (e) {}
+/* ── SCENE 4 — DENSE PIPE FIELD ─────────────── */
+function sceneMoor(ctx, W, H) {
+    const sk=ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#252220'); sk.addColorStop(0.5,'#322e28'); sk.addColorStop(1,'#282420');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    _ruinSkyline(ctx,W,H,'#2a2620',0.36,0.60);
+    _mountains(ctx,W,H,[[0,.72],[.14,.64],[.28,.70],[.44,.63],[.60,.69],[.76,.63],[.90,.68],[1,.73]],'#222018');
+    ctx.fillStyle=C.ground; ctx.fillRect(0,H*.82,W,H*.18);
+    _pipes(ctx, W, H, H*.82, Math.floor(Math.random()*99999));
+    _groundShadows(ctx, W, H);
+}
+
+/* ── WIND FARM — broken frozen turbines ─────── */
+function sceneWindFarm(ctx, W, H) {
+    const sk=ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#222026'); sk.addColorStop(0.5,'#2e2c34'); sk.addColorStop(1,'#201e26');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    _ruinSkyline(ctx,W,H,'#262430',0.38,0.64);
+    _mountains(ctx,W,H,[[0,.70],[.12,.58],[.26,.64],[.40,.56],[.55,.62],[.70,.55],[.84,.61],[1,.68]],'#1e1c24');
+    ctx.fillStyle=C.ground; ctx.fillRect(0,H*.82,W,H*.18);
+
+    // Draw a broken wind turbine: tower + nacelle + 3 blades at broken angles
+    function _turbine(tx, towerH, tilt, bladeAngles, brokenBlade) {
+        ctx.save(); ctx.translate(tx, H*.82); ctx.rotate(tilt);
+        ctx.fillStyle=C.silDark;
+        // Tower — tapers slightly
+        ctx.beginPath();
+        ctx.moveTo(-5, 0); ctx.lineTo(-3, -towerH); ctx.lineTo(3, -towerH); ctx.lineTo(5, 0);
+        ctx.closePath(); ctx.fill();
+        // Nacelle box at top
+        ctx.fillRect(-10, -towerH-8, 20, 9);
+        // Blades
+        bladeAngles.forEach((angle, i) => {
+            ctx.save(); ctx.translate(0, -towerH-4);
+            ctx.rotate(angle);
+            const bLen = towerH * 0.48;
+            // Broken blade shorter
+            const len = (i === brokenBlade) ? bLen * 0.55 : bLen;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(4, -len*0.3, 7, -len*0.7, 5, -len);
+            ctx.bezierCurveTo(2, -len, -2, -len*0.7, -1, -len*0.3);
+            ctx.closePath(); ctx.fill();
+            // Broken tip
+            if (i===brokenBlade) {
+                ctx.save(); ctx.translate(5,-len);
+                ctx.rotate(0.4);
+                ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(4,-bLen*0.3); ctx.lineTo(-3,-bLen*0.25); ctx.closePath(); ctx.fill();
+                ctx.restore();
+            }
+            ctx.restore();
+        });
+        // Hub circle
+        ctx.beginPath(); ctx.arc(0,-towerH-4,5,0,Math.PI*2); ctx.fill();
+        ctx.restore();
     }
 
-    // Attempt to start both tracks inside the current gesture context.
-    // If blocked, we keep unlocked=false so a later tap can retry.
-    this.unlocking = (async () => {
-        try {
-            await this.menuTrack.play();
-            await this.bubblesTrack.play();
+    // Fallen turbine on the ground
+    function _fallenTurbine(tx) {
+        ctx.save(); ctx.translate(tx, H*.82); ctx.fillStyle=C.silDark;
+        const towerLen=H*.22;
+        // Horizontal tower
+        ctx.beginPath(); ctx.moveTo(-5,-4); ctx.lineTo(-towerLen,-2); ctx.lineTo(-towerLen,2); ctx.lineTo(-5,4); ctx.closePath(); ctx.fill();
+        ctx.fillRect(-H*.22-12,-5,14,10);
+        // Blades splayed on ground
+        ctx.save(); ctx.translate(-H*.22,0);
+        [[0.2,H*.10],[1.1,H*.09],[-0.5,H*.08]].forEach(([a,l])=>{
+            ctx.save(); ctx.rotate(a);
+            ctx.beginPath(); ctx.moveTo(0,0); ctx.bezierCurveTo(4,-l*0.3,7,-l*0.7,5,-l);
+            ctx.bezierCurveTo(2,-l,-2,-l*0.7,-1,-l*0.3); ctx.closePath(); ctx.fill();
+            ctx.restore();
+        });
+        ctx.restore(); ctx.restore();
+    }
 
-            this.unlocked = true;
-            this.ready = true; // keep legacy flag for the rest of the code
+    _turbine(W*.15, H*.52, -0.06, [0, 2.1, 4.2], 1);
+    _turbine(W*.38, H*.60, 0.03,  [0.5, 2.6, 4.7], null);
+    _turbine(W*.62, H*.48, 0.08,  [0.8, 2.9, 5.0], 2);
+    _turbine(W*.85, H*.55, -0.04, [1.1, 3.2, 5.3], 0);
+    _fallenTurbine(W*.50);
 
-            // Default to menu volumes after unlock
-            this._fadeTo(this.menuTrack,    this.MENU_MUSIC_VOL,   this.FADE_MUSIC);
-            this._fadeTo(this.bubblesTrack, this.MENU_BUBBLES_VOL, this.FADE_BUBBLES);
-            return true;
-        } catch (e) {
-            this.unlocked = false;
-            this.ready = false;
-            console.warn('Audio unlock failed (will retry on next tap):', e);
-            return false;
-        } finally {
-            this.unlocking = null;
+    // Fence posts along ground
+    ctx.fillStyle=C.silDark;
+    for(let i=0;i<12;i++){
+        const fx=W*(0.04+i*0.085);
+        ctx.fillRect(fx-1.5, H*.82-H*.04, 3, H*.04);
+        if(i<11) ctx.fillRect(fx, H*.82-H*.03, W*0.085, 1.5);
+    }
+    _groundShadows(ctx,W,H);
+}
+
+/* ── CRASHED SPACE / MARS ────────────────────── */
+function sceneSpaceCrash(ctx, W, H) {
+    // Reddish-dark sky — Mars palette
+    const sk=ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#1e1614'); sk.addColorStop(0.5,'#2c1e1a'); sk.addColorStop(1,'#201612');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    // Two small Martian moons — crescent
+    _moon(ctx, W*.78, H*.10, W*.05, 'rgba(200,160,140,0.28)');  // rusty moon
+    _moon(ctx, W*.18, H*.16, W*.028, 'rgba(185,145,125,0.20)');  // second small moon
+    // Distant low mesa silhouettes
+    _mountains(ctx,W,H,[[0,.72],[.10,.64],[.22,.68],[.36,.62],[.52,.66],[.66,.60],[.80,.65],[1,.70]],'#251a16');
+    _mountains(ctx,W,H,[[0,.80],[.15,.74],[.30,.77],[.50,.73],[.70,.76],[.88,.74],[1,.78]],'#1c1410');
+    ctx.fillStyle='#181008'; ctx.fillRect(0,H*.82,W,H*.18);
+
+    ctx.fillStyle=C.silDark;
+
+    // Large crashed satellite dish — face down, cracked
+    const dX=W*.38, dY=H*.82;
+    // Dish body — ellipse face-down
+    ctx.beginPath(); ctx.ellipse(dX, dY-8, W*.22, H*.09, -0.15, 0, Math.PI*2); ctx.fill();
+    // Inner dish hollow
+    ctx.fillStyle='#0c0a08';
+    ctx.beginPath(); ctx.ellipse(dX-4, dY-10, W*.17, H*.065, -0.15, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=C.silDark;
+    // Dish mount arm sticking up at angle
+    ctx.save(); ctx.translate(dX+W*.10, dY-12); ctx.rotate(-0.6);
+    ctx.fillRect(-4, -H*.18, 8, H*.18);
+    // Broken joint at top
+    ctx.save(); ctx.translate(0,-H*.18); ctx.rotate(0.8);
+    ctx.fillRect(-3,0,6,H*.07); ctx.restore();
+    ctx.restore();
+    // Crack lines on dish
+    ctx.strokeStyle='rgba(8,6,4,0.9)'; ctx.lineWidth=1.5; ctx.lineCap='round';
+    [[dX-W*.08,dY-14,dX-W*.04,dY-4],[dX+W*.04,dY-18,dX+W*.10,dY-8],[dX-W*.12,dY-6,dX-W*.06,dY-2]].forEach(([x1,y1,x2,y2])=>{
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    });
+
+    // Broken solar panel array — left side
+    ctx.fillStyle=C.silDark;
+    const panX=W*.72, panY=H*.70;
+    // Main arm
+    ctx.fillRect(panX-6, panY, 12, H*.12);
+    // Panel rows — some snapped off
+    [[-1,0,1],[-1,0.25,0.6],[-1,0.5,1],[1,0,1],[1,0.25,0.8]].forEach(([dir,frac,scale])=>{
+        const py2=panY+H*.12*frac;
+        ctx.fillRect(panX+dir*(W*.18*scale)-4, py2-4, W*.18*scale, 8);
+        // Grid lines on panels
+        ctx.strokeStyle='rgba(8,6,4,0.7)'; ctx.lineWidth=1;
+        for(let g=1;g<4;g++){
+            ctx.beginPath();
+            ctx.moveTo(panX+dir*(W*.18*scale*g/4)-4, py2-4);
+            ctx.lineTo(panX+dir*(W*.18*scale*g/4)-4, py2+4);
+            ctx.stroke();
         }
-    })();
+        ctx.fillStyle=C.silDark;
+    });
 
-    return this.unlocking;
-},
+    // Comms tower — bent, listing left
+    ctx.save(); ctx.translate(W*.88, H*.82); ctx.rotate(-0.12);
+    ctx.fillRect(-4,-H*.40,8,H*.40);
+    // Cross struts
+    [[H*.10],[H*.22],[H*.34]].forEach(([h])=>{
+        ctx.fillRect(-12,-h,24,4);
+    });
+    // Dish on top — snapped
+    ctx.save(); ctx.translate(0,-H*.40); ctx.rotate(0.5);
+    ctx.beginPath(); ctx.ellipse(0,0,W*.06,H*.04,-0.3,0,Math.PI); ctx.fill();
+    ctx.restore(); ctx.restore();
 
-    // Also kept for compatibility
-    init() { this.setup(); },
+    // Scattered debris on ground
+    [[W*.08,H*.82,20,7,0.15],[W*.18,H*.82,14,5,-0.2],[W*.55,H*.82,18,6,0.1],[W*.65,H*.82,10,4,-0.1],[W*.82,H*.82,16,5,0.2]].forEach(([rx,ry,rw,rh,rot])=>{
+        ctx.save(); ctx.translate(rx,ry); ctx.rotate(rot);
+        ctx.fillRect(-rw/2,-rh,rw,rh); ctx.restore();
+    });
 
-    // Call when returning to menu or end screen
-    startMusic() {
-        // Try to unlock if needed; then apply volumes.
-        this.setup().then((ok) => {
-            if (!ok) return;
-            this._fadeTo(this.menuTrack,    this.MENU_MUSIC_VOL,   this.FADE_MUSIC);
-            this._fadeTo(this.bubblesTrack, this.MENU_BUBBLES_VOL, this.FADE_BUBBLES);
-        });
-    },
+    // Dust/impact craters on ground
+    ctx.strokeStyle='rgba(0,0,0,0.50)'; ctx.lineWidth=2;
+    [[W*.25,H*.84,18],[W*.55,H*.85,12],[W*.70,H*.84,8]].forEach(([cx,cy,r])=>{
+        ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,Math.PI*2); ctx.stroke();
+    });
 
-    // Call when entering a scene
-    startSceneMusic() {
-        // Try to unlock if needed; then apply volumes.
-        this.setup().then((ok) => {
-            if (!ok) return;
-            this._fadeTo(this.menuTrack,    0,                   this.FADE_MUSIC);
-            this._fadeTo(this.bubblesTrack, this.SCENE_BUBBLES_VOL, this.FADE_BUBBLES);
-        });
-    },
+    _groundShadows(ctx,W,H);
+}
 
-    // Graceful stop (not really used in normal flow but kept for safety)
-    stopMusic() {
-        if (!this.ready) return;
-        this._fadeTo(this.menuTrack,   0, this.FADE_MUSIC);
-        this._fadeTo(this.bubblesTrack, 0, this.FADE_BUBBLES);
-    },
+/* ── SPACE 2 — DEAD MOON / GREY ICY WRECKAGE ── */
+function sceneSpaceMoon(ctx, W, H) {
+    // Cold grey-blue — dead moon surface
+    const sk=ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#0e1018'); sk.addColorStop(0.5,'#161a22'); sk.addColorStop(1,'#111418');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    // Large full Earth/planet in sky
+    _moon(ctx, W*.72, H*.15, W*.12, 'rgba(210,210,220,0.28)');  // cool grey-white
+    // Distant crater rim ridgeline
+    _mountains(ctx,W,H,[[0,.68],[.08,.60],[.18,.64],[.30,.58],[.44,.62],[.56,.56],[.68,.61],[.82,.57],[.92,.62],[1,.66]],'#191d26');
+    _mountains(ctx,W,H,[[0,.78],[.12,.72],[.26,.75],[.42,.70],[.58,.74],[.74,.70],[.88,.73],[1,.76]],'#13161e');
+    ctx.fillStyle='#0e1016'; ctx.fillRect(0,H*.82,W,H*.18);
 
-    _fadeTo(track, targetVol, duration, onDone) {
-        // Clear any existing fade on this track
-        if (track._fadeTimer) clearInterval(track._fadeTimer);
-        const steps = 30;
-        const ms = duration / steps;
-        const start = track.volume;
-        const delta = (targetVol - start) / steps;
-        let step = 0;
-        track._fadeTimer = setInterval(() => {
-            step++;
-            track.volume = Math.max(0, Math.min(1, start + delta * step));
-            if (step >= steps) {
-                clearInterval(track._fadeTimer);
-                track._fadeTimer = null;
-                if (onDone) onDone();
+    ctx.fillStyle=C.silDark;
+
+    // Crashed lander — three legs splayed, body tilted
+    const lX=W*.30, lY=H*.82;
+    ctx.save(); ctx.translate(lX, lY); ctx.rotate(0.18);
+    // Body hexagon
+    ctx.beginPath();
+    for(let i=0;i<6;i++){
+        const a=i/6*Math.PI*2, r=W*.07;
+        i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r-H*.08):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r-H*.08);
+    }
+    ctx.closePath(); ctx.fill();
+    // Engine nozzle underneath
+    ctx.beginPath(); ctx.ellipse(0,-H*.04,W*.04,H*.025,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0a0c10';
+    ctx.beginPath(); ctx.ellipse(0,-H*.04,W*.025,H*.015,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=C.silDark;
+    // Three legs — one broken
+    [[-0.9,0.5],[0,1.1],[0.8,0.4]].forEach(([angle,len],i)=>{
+        ctx.save(); ctx.rotate(angle);
+        ctx.fillRect(-3,0,6,H*.14*len);
+        // Foot pad
+        if(i!==1) ctx.fillRect(-10,H*.14*len-4,20,5);
+        // Broken leg — snapped mid
+        if(i===1){ ctx.save(); ctx.translate(0,H*.08); ctx.rotate(0.6); ctx.fillRect(-3,0,5,H*.06); ctx.restore(); }
+        ctx.restore();
+    });
+    ctx.restore();
+
+    // Frozen cryo tanks — cylindrical shapes on their sides
+    [[W*.62,H*.76,W*.14,H*.05,0.08],[W*.68,H*.80,W*.10,H*.035,-0.05],[W*.58,H*.79,W*.08,H*.03,0.12]].forEach(([cx,cy,rw,rh,rot])=>{
+        ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot);
+        ctx.beginPath(); ctx.ellipse(0,0,rw/2,rh/2,0,0,Math.PI*2); ctx.fill();
+        // End caps
+        ctx.beginPath(); ctx.ellipse(-rw/2,0,rh*0.6,rh/2,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(rw/2,0,rh*0.6,rh/2,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+    });
+
+    // Broken antenna mast — thin, leaning
+    ctx.save(); ctx.translate(W*.80,H*.82); ctx.rotate(-0.22);
+    ctx.fillRect(-2,-H*.38,4,H*.38);
+    // Crossbars
+    [H*.12,H*.24,H*.34].forEach(h=>ctx.fillRect(-14,-h,28,3));
+    // Dish on top snapped off — lying at an angle
+    ctx.save(); ctx.translate(0,-H*.38); ctx.rotate(1.2);
+    ctx.beginPath(); ctx.ellipse(0,0,W*.05,H*.03,0,0,Math.PI*2); ctx.fill();
+    ctx.restore(); ctx.restore();
+
+    // Scattered hull plating — irregular polygon shapes
+    ctx.fillStyle=C.silDark;
+    [[W*.05,H*.82],[W*.12,H*.81],[W*.48,H*.82],[W*.52,H*.81],[W*.86,H*.82]].forEach(([px,py])=>{
+        const s=8+Math.random()*14;
+        ctx.save(); ctx.translate(px,py); ctx.rotate(Math.random()*0.4-0.2);
+        ctx.beginPath(); ctx.moveTo(-s,0); ctx.lineTo(-s*0.3,-s*0.8); ctx.lineTo(s*0.5,-s*0.6);
+        ctx.lineTo(s,0); ctx.closePath(); ctx.fill(); ctx.restore();
+    });
+
+    // Craters — simple arc shadows
+    ctx.strokeStyle='rgba(0,0,0,0.60)'; ctx.lineWidth=2.5;
+    [[W*.20,H*.85,22],[W*.44,H*.84,14],[W*.70,H*.85,18],[W*.88,H*.84,10]].forEach(([cx,cy,r])=>{
+        ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI*1.1,Math.PI*1.9); ctx.stroke();
+    });
+
+    _groundShadows(ctx,W,H);
+}
+
+/* ── SPACE 3 — TOXIC PLANET / YELLOW-GREEN HAZE ─ */
+function sceneSpaceToxic(ctx, W, H) {
+    // Sickly yellow-green atmosphere
+    const sk=ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#141a0e'); sk.addColorStop(0.4,'#1c2410'); sk.addColorStop(1,'#161c0c');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    // Half moon barely visible through haze
+    _moon(ctx, W*.82, H*.08, W*.055, 'rgba(180,200,150,0.22)');  // toxic pale green
+    // Haze layer mid-sky
+    const haze=ctx.createLinearGradient(0,H*.35,0,H*.60);
+    haze.addColorStop(0,'rgba(40,55,10,0)'); haze.addColorStop(0.5,'rgba(40,55,10,0.20)'); haze.addColorStop(1,'rgba(40,55,10,0)');
+    ctx.fillStyle=haze; ctx.fillRect(0,H*.35,W,H*.25);
+    // Jagged horizon
+    _mountains(ctx,W,H,[[0,.65],[.07,.57],[.16,.61],[.28,.54],[.40,.59],[.53,.52],[.64,.57],[.76,.51],[.88,.56],[1,.62]],'#1a2212');
+    _mountains(ctx,W,H,[[0,.76],[.14,.68],[.28,.73],[.44,.66],[.60,.71],[.76,.66],[.90,.70],[1,.74]],'#141a0c');
+    ctx.fillStyle='#101408'; ctx.fillRect(0,H*.82,W,H*.18);
+
+    ctx.fillStyle=C.silDark;
+
+    // Crashed probe — boxy body, wheels exposed, rolled over
+    const pX=W*.25, pY=H*.82;
+    ctx.save(); ctx.translate(pX,pY); ctx.rotate(0.25);
+    // Main body box
+    ctx.fillRect(-W*.10,-H*.10,W*.20,H*.10);
+    // Mast broken sideways
+    ctx.save(); ctx.translate(W*.06,-H*.10); ctx.rotate(-0.8);
+    ctx.fillRect(-3,-H*.22,5,H*.22);
+    ctx.beginPath(); ctx.ellipse(0,-H*.22,W*.04,H*.025,0.3,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    // Wheels — three visible, squashed
+    [[-W*.08,0],[0,H*.01],[W*.08,0]].forEach(([wx,wy])=>{
+        ctx.beginPath(); ctx.ellipse(wx,wy,W*.04,W*.025,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#0e1008';
+        ctx.beginPath(); ctx.ellipse(wx,wy,W*.022,W*.014,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle=C.silDark;
+        // Spokes
+        for(let s=0;s<4;s++){
+            const sa=s/4*Math.PI*2;
+            ctx.fillRect(wx+Math.cos(sa)*W*.01-1,wy+Math.sin(sa)*W*.01-1,2,2);
+        }
+    });
+    ctx.restore();
+
+    // Fuel tanks — bloated spherical shapes, one cracked open
+    ctx.save(); ctx.translate(W*.65,H*.78);
+    ctx.beginPath(); ctx.ellipse(0,0,W*.09,H*.06,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0c0e08';
+    ctx.beginPath(); ctx.ellipse(-W*.02,-H*.01,W*.06,H*.04,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=C.silDark;
+    // Crack on surface
+    ctx.strokeStyle='rgba(5,7,3,0.9)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(-W*.04,-H*.02); ctx.lineTo(W*.02,H*.01); ctx.lineTo(W*.05,-H*.01); ctx.stroke();
+    ctx.restore();
+
+    // Second smaller tank nearby
+    ctx.save(); ctx.translate(W*.76,H*.80);
+    ctx.beginPath(); ctx.ellipse(0,0,W*.06,H*.04,0.2,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Strewn mechanical parts — gears, panels, tubes
+    ctx.fillStyle=C.silDark;
+    // Gear shape
+    ctx.save(); ctx.translate(W*.88,H*.81);
+    for(let t=0;t<8;t++){
+        ctx.save(); ctx.rotate(t/8*Math.PI*2);
+        ctx.fillRect(-3,-W*.04,6,W*.025); ctx.restore();
+    }
+    ctx.beginPath(); ctx.arc(0,0,W*.03,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0c0e08';
+    ctx.beginPath(); ctx.arc(0,0,W*.015,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=C.silDark;
+    ctx.restore();
+
+    // Bent tube structures
+    [[W*.10,H*.82,W*.12,0.10],[W*.46,H*.82,W*.08,-0.08]].forEach(([tx,ty,len,rot])=>{
+        ctx.save(); ctx.translate(tx,ty); ctx.rotate(rot);
+        ctx.fillRect(-4,-H*.06,8,H*.06);
+        ctx.save(); ctx.translate(0,-H*.06); ctx.rotate(0.7);
+        ctx.fillRect(-3,0,6,H*.05); ctx.restore(); ctx.restore();
+    });
+
+    // Ground cracks — more aggressive, alien surface
+    ctx.strokeStyle='rgba(0,0,0,0.65)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(W*.30,H*.83); ctx.bezierCurveTo(W*.38,H*.82,W*.44,H*.84,W*.50,H*.83); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W*.55,H*.84); ctx.bezierCurveTo(W*.62,H*.83,W*.70,H*.85,W*.80,H*.83); ctx.stroke();
+
+    _groundShadows(ctx,W,H);
+}
+
+/* ── SPACE 4 — DEEP BLACK / ORBITAL DEBRIS FIELD ─ */
+function sceneSpaceOrbit(ctx, W, H) {
+    // Near-pure black — deep space, no atmosphere
+    const sk=ctx.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#080808'); sk.addColorStop(0.6,'#0e0c10'); sk.addColorStop(1,'#0c0a0e');
+    ctx.fillStyle=sk; ctx.fillRect(0,0,W,H);
+    // Crescent moon — lower left of sky
+    _moon(ctx, W*.15, H*.20, W*.07, 'rgba(190,200,215,0.24)');  // cold blue-white
+    // Very faint starfield
+    ctx.fillStyle='rgba(180,170,190,0.5)';
+    [[W*.08,H*.08],[W*.22,H*.15],[W*.45,H*.06],[W*.60,H*.12],[W*.75,H*.05],[W*.90,H*.18],
+     [W*.15,H*.28],[W*.35,H*.22],[W*.55,H*.30],[W*.80,H*.25],[W*.92,H*.32],
+     [W*.04,H*.40],[W*.28,H*.38],[W*.70,H*.42],[W*.85,H*.36]].forEach(([sx,sy])=>{
+        ctx.beginPath(); ctx.arc(sx,sy,1+Math.random(),0,Math.PI*2); ctx.fill();
+    });
+    // Distant dark planetoid silhouette — upper right
+    ctx.fillStyle='#100e14';
+    ctx.beginPath(); ctx.arc(W*.88,H*.14,W*.22,0,Math.PI*2); ctx.fill();
+    // Surface horizon very low
+    _mountains(ctx,W,H,[[0,.82],[.20,.78],[.40,.80],[.60,.77],[.80,.79],[1,.81]],'#0e0c12');
+    ctx.fillStyle='#0a080c'; ctx.fillRect(0,H*.84,W,H*.16);
+
+    ctx.fillStyle=C.silDark;
+
+    // Large broken space station module — cylindrical hull sections
+    const mX=W*.40, mY=H*.78;
+    // Main hull cylinder
+    ctx.save(); ctx.translate(mX,mY); ctx.rotate(-0.08);
+    ctx.beginPath(); ctx.ellipse(0,0,W*.25,H*.07,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0a0810';
+    ctx.beginPath(); ctx.ellipse(0,0,W*.20,H*.05,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=C.silDark;
+    // Docking collar
+    ctx.fillRect(-W*.26,-H*.02,W*.52,H*.04);
+    // End caps
+    ctx.beginPath(); ctx.ellipse(-W*.25,0,H*.04,H*.07,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(W*.25,0,H*.04,H*.07,0,0,Math.PI*2); ctx.fill();
+    // Cracks/breaches in hull
+    ctx.strokeStyle='rgba(6,4,8,0.95)'; ctx.lineWidth=2;
+    [[-W*.10,-H*.04,W*.04,H*.02],[W*.06,H*.03,W*.14,-H*.02],[-W*.18,H*.01,-W*.12,H*.05]].forEach(([x1,y1,x2,y2])=>{
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    });
+    // Solar wing — one snapped
+    ctx.fillStyle=C.silDark;
+    // Intact wing right
+    ctx.fillRect(W*.26,-H*.015,W*.18,H*.03);
+    for(let p=1;p<5;p++) ctx.fillRect(W*.26+W*.18*p/5,-H*.015,1,H*.03);
+    // Broken wing left — bent down
+    ctx.save(); ctx.translate(-W*.26,0); ctx.rotate(0.5);
+    ctx.fillRect(-W*.14,-H*.015,W*.14,H*.03);
+    ctx.restore();
+    ctx.restore();
+
+    // Floating debris — bits scattered around scene at different heights
+    // Helmet
+    ctx.save(); ctx.translate(W*.12,H*.55);
+    ctx.beginPath(); ctx.ellipse(0,0,W*.05,W*.055,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0a0810';
+    ctx.beginPath(); ctx.ellipse(W*.01,-W*.005,W*.028,W*.022,0.1,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Tumbling panel
+    ctx.save(); ctx.translate(W*.80,H*.50); ctx.rotate(0.3);
+    ctx.fillStyle=C.silDark;
+    ctx.fillRect(-W*.08,-H*.04,W*.16,H*.08);
+    for(let g=1;g<4;g++){
+        ctx.fillRect(-W*.08+W*.16*g/4,-H*.04,1,H*.08);
+        ctx.fillRect(-W*.08,-H*.04+H*.08*g/4,W*.16,1);
+    }
+    ctx.restore();
+
+    // Thruster nozzle
+    ctx.save(); ctx.translate(W*.18,H*.72); ctx.rotate(-0.3);
+    ctx.fillStyle=C.silDark;
+    ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(-14,H*.06); ctx.lineTo(14,H*.06); ctx.lineTo(8,0); ctx.closePath(); ctx.fill();
+    ctx.fillRect(-6,-H*.06,12,H*.06);
+    ctx.restore();
+
+    // Twisted strut
+    ctx.save(); ctx.translate(W*.68,H*.65); ctx.rotate(0.7);
+    ctx.fillRect(-3,-H*.14,5,H*.14);
+    ctx.save(); ctx.translate(0,-H*.14); ctx.rotate(-1.1);
+    ctx.fillRect(-3,0,4,H*.08); ctx.restore(); ctx.restore();
+
+    // Ground scatter
+    [[W*.05,H*.84,16,5,0.2],[W*.28,H*.84,12,4,-0.15],[W*.52,H*.84,18,6,0.1],[W*.72,H*.84,10,4,0.25],[W*.90,H*.84,14,5,-0.2]].forEach(([rx,ry,rw,rh,rot])=>{
+        ctx.save(); ctx.translate(rx,ry); ctx.rotate(rot);
+        ctx.fillRect(-rw/2,-rh,rw,rh); ctx.restore();
+    });
+
+    _groundShadows(ctx,W,H);
+}
+
+/* ================================================
+   SCENE HELPERS
+================================================ */
+function _mountains(ctx, W, H, pts, color) {
+    ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(0,H);
+    pts.forEach(([x,y])=>ctx.lineTo(W*x,H*y));
+    ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+}
+
+function _bareTree(ctx, tx, ty, h, w, depth) {
+    if (depth===0||h<5) return;
+    ctx.save();
+    ctx.strokeStyle=C.silDark; ctx.lineWidth=w; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(tx,ty-h); ctx.stroke();
+    if(depth>1){
+        const sp=h*.52;
+        _bareTree(ctx,tx-sp*.48,ty-h,h*.56,w*.60,depth-1);
+        _bareTree(ctx,tx+sp*.42,ty-h,h*.50,w*.56,depth-1);
+        if(depth>2) _bareTree(ctx,tx-sp*.12,ty-h*.68,h*.40,w*.46,depth-2);
+    }
+    ctx.restore();
+}
+
+function _arch(ctx, lx, rx, groundY, archH, colW) {
+    ctx.fillStyle=C.silDark;
+    [[lx],[rx]].forEach(([cx])=>{
+        ctx.fillRect(cx-colW*.55, groundY-archH, colW*1.1, archH);
+        ctx.fillRect(cx-colW*.7,  groundY-archH, colW*1.4, archH*.07);
+        ctx.fillRect(cx-colW*.7,  groundY-archH*.08, colW*1.4, archH*.08);
+    });
+    const topY=groundY-archH;
+    ctx.beginPath();
+    ctx.moveTo(lx-colW*.5, topY+archH*.06);
+    ctx.bezierCurveTo(lx-colW*.5,topY-archH*.22,rx+colW*.5,topY-archH*.22,rx+colW*.5,topY+archH*.06);
+    ctx.lineTo(rx-colW*.5, topY+archH*.06);
+    ctx.bezierCurveTo(rx-colW*.5,topY-archH*.08,lx+colW*.5,topY-archH*.08,lx+colW*.5,topY+archH*.06);
+    ctx.closePath(); ctx.fill();
+}
+
+function _groundShadows(ctx, W, H) {
+    ctx.save();
+    const sg=ctx.createLinearGradient(0,H*.80,0,H*.88);
+    sg.addColorStop(0,'rgba(0,0,0,0.28)'); sg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sg; ctx.fillRect(0,H*.80,W,H*.08);
+    ctx.strokeStyle='rgba(0,0,0,0.60)'; ctx.lineCap='round';
+    ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(W*.04,H*.82); ctx.bezierCurveTo(W*.14,H*.81,W*.26,H*.83,W*.38,H*.82); ctx.bezierCurveTo(W*.45,H*.82,W*.48,H*.84,W*.50,H*.83); ctx.stroke();
+    ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.moveTo(W*.22,H*.82); ctx.lineTo(W*.20,H*.86); ctx.lineTo(W*.16,H*.87); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W*.35,H*.82); ctx.lineTo(W*.38,H*.85); ctx.stroke();
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(W*.52,H*.84); ctx.bezierCurveTo(W*.60,H*.83,W*.70,H*.85,W*.80,H*.83); ctx.bezierCurveTo(W*.87,H*.82,W*.92,H*.83,W*.97,H*.82); ctx.stroke();
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(W*.68,H*.84); ctx.lineTo(W*.72,H*.88); ctx.lineTo(W*.74,H*.90); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W*.80,H*.83); ctx.lineTo(W*.76,H*.87); ctx.stroke();
+    ctx.fillStyle='rgba(0,0,0,0.28)';
+    [[W*.18,H*.875,22,5,0.08],[W*.58,H*.865,20,5,-0.05],[W*.80,H*.885,16,4,0.10],[W*.08,H*.855,12,3,-0.12],[W*.42,H*.880,14,4,0.04]].forEach(([px,py,rx,ry,rot])=>{
+        ctx.save(); ctx.translate(px,py); ctx.rotate(rot);
+        ctx.beginPath(); ctx.ellipse(0,0,rx/2,ry/2,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+    });
+    ctx.restore();
+}
+
+function _pipes(ctx, W, H, groundY, seed) {
+    ctx.save();
+    ctx.fillStyle = C.silDark;
+    ctx.lineCap = 'square';
+    let _s = seed || 42;
+    const rng = () => { _s = (_s * 1664525 + 1013904223) & 0xffffffff; return Math.abs(_s) / 0x7fffffff; };
+    const pipe = (x, y, w, h) => { if(w!==0&&h!==0) ctx.fillRect(x, y, w, h); };
+    const collar = (cx, cy, pw) => ctx.fillRect(cx - pw*0.9, cy - pw*0.4, pw*1.8, pw*0.8);
+
+    // Big diameters — more like main screen
+    const pipeDiams = [12, 16, 20, 24, 28];
+
+    // 5-8 main vertical pipes across the width
+    const numPipes = 5 + Math.floor(rng()*4);
+    for (let v=0; v<numPipes; v++) {
+        const vx  = W*(0.06 + v/numPipes*0.88 + (rng()-0.5)*0.06);
+        const pd  = pipeDiams[Math.floor(rng()*pipeDiams.length)];
+        // Height: from ground up, varying — some tall, some mid
+        const ph  = H*(0.30 + rng()*0.55);
+        const topY = groundY - ph;
+
+        // Main shaft
+        ctx.fillStyle = C.silDark;
+        pipe(vx - pd/2, topY, pd, ph);
+
+        // 1-3 collars along shaft
+        const numC = 1 + Math.floor(rng()*3);
+        for (let c=0; c<numC; c++) {
+            const cy = topY + ph*(0.25 + c*0.22 + rng()*0.1);
+            collar(vx, cy, pd);
+
+            // ~50% chance: horizontal branch from this collar
+            if (rng() > 0.50) {
+                const dir    = rng()>0.5 ? 1 : -1;
+                const bpd    = pipeDiams[Math.floor(rng()*3)]; // branch thinner or same
+                const bLen   = W*(0.06 + rng()*0.18);
+                const endX   = vx + dir*(pd/2 + bLen);
+
+                // Elbow corner fill
+                ctx.fillRect(vx + (dir>0?pd/2:-pd/2) - bpd*0.4, cy - bpd/2, bpd*0.8, bpd);
+                // Horizontal run
+                pipe(vx + dir*pd/2, cy - bpd/2, dir*bLen, bpd);
+                // Collar at end of branch
+                ctx.fillRect(endX - bpd*0.9, cy - bpd*0.4, bpd*1.8, bpd*0.8);
+
+                // 40% chance: short drop pipe hanging from end of branch
+                if (rng() > 0.60) {
+                    const dropPd  = Math.max(8, bpd - 4);
+                    const dropLen = H*(0.05 + rng()*0.12);
+                    pipe(endX - dropPd/2, cy + bpd/2, dropPd, dropLen);
+                    collar(endX, cy + bpd/2 + dropLen*0.5, dropPd);
+                    // Cap at bottom of drop
+                    ctx.fillRect(endX - dropPd*1.1, cy + bpd/2 + dropLen - dropPd*0.5, dropPd*2.2, dropPd*0.5);
+                }
             }
-        }, ms);
+        }
+
+        // Top cap — flanged
+        const capPd = pd*2.0;
+        ctx.fillRect(vx - capPd/2, topY - pd*0.8, capPd, pd*0.8);
+        ctx.fillRect(vx - pd*1.1,  topY - pd*1.5, pd*2.2, pd*0.7);
+
+        // Base plate at ground
+        ctx.fillRect(vx - pd*1.4, groundY - pd*0.6, pd*2.8, pd*0.6);
+    }
+
+    ctx.restore();
+}
+
+function _ruinSkyline(ctx, W, H, color, yTop, yBot) {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(0, H);
+    const pts = [
+        [0,yBot],[0.04,yBot],[0.04,yTop+0.08],[0.06,yTop+0.06],[0.06,yTop+0.02],[0.07,yTop+0.02],
+        [0.07,yTop+0.06],[0.10,yTop+0.06],[0.10,yTop+0.12],[0.14,yTop+0.12],[0.14,yTop+0.05],
+        [0.16,yTop+0.03],[0.18,yTop+0.05],[0.18,yTop+0.10],[0.22,yTop+0.10],[0.22,yTop+0.18],
+        [0.26,yTop+0.18],[0.26,yTop+0.07],[0.27,yTop+0.04],[0.29,yTop+0.04],[0.30,yTop+0.07],
+        [0.30,yTop+0.14],[0.35,yTop+0.14],[0.35,yTop+0.20],[0.40,yTop+0.20],[0.40,yTop+0.09],
+        [0.42,yTop+0.06],[0.44,yTop+0.09],[0.44,yTop+0.14],[0.50,yTop+0.14],[0.50,yTop+0.22],
+        [0.54,yTop+0.22],[0.54,yTop+0.06],[0.56,yTop+0.03],[0.57,yTop+0.06],[0.58,yTop+0.06],
+        [0.58,yTop+0.10],[0.62,yTop+0.10],[0.62,yTop+0.18],[0.68,yTop+0.18],[0.68,yTop+0.08],
+        [0.70,yTop+0.05],[0.72,yTop+0.08],[0.76,yTop+0.08],[0.76,yTop+0.15],[0.80,yTop+0.15],
+        [0.80,yTop+0.07],[0.82,yTop+0.04],[0.83,yTop+0.07],[0.86,yTop+0.07],[0.86,yTop+0.12],
+        [0.90,yTop+0.12],[0.90,yTop+0.20],[0.94,yTop+0.20],[0.94,yTop+0.08],[0.96,yTop+0.05],
+        [0.98,yTop+0.08],[1.0,yTop+0.08],[1.0,yBot],
+    ];
+    pts.forEach(([x,y]) => ctx.lineTo(W*x, H*y));
+    ctx.closePath(); ctx.fill();
+}
+
+function _moon(ctx, x, y, r, color) {
+    ctx.save();
+    const col = color || 'rgba(200,195,185,0.22)';
+    // Outer glow
+    const glow = ctx.createRadialGradient(x, y, r*0.5, x, y, r*2.5);
+    glow.addColorStop(0, col.replace(/[\d.]+\)$/, '0.12)'));
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(x, y, r*2.5, 0, Math.PI*2); ctx.fill();
+    // Moon disc
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    // Subtle craters
+    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+    [[x-r*.28, y-r*.22, r*.18],[x+r*.28, y+r*.18, r*.13],[x-r*.08, y+r*.32, r*.10]].forEach(([cx,cy,cr])=>{
+        ctx.beginPath(); ctx.arc(cx,cy,cr,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+}
+const Vents = {
+    vents: [], W: 0, H: 0,
+    init(W, H) {
+        this.W=W; this.H=H;
+        this._setVents(W, H, [0.18, 0.50, 0.82]);  // default spread
+    },
+    setPositions(xFractions) {
+        // xFractions: array of 2-3 x positions as fractions of W
+        this._setVents(this.W, this.H, xFractions);
+    },
+    _setVents(W, H, xs) {
+        this.vents = xs.map((x, i) => ({
+            x: W*x,
+            y: H*(0.848 + (i%2)*0.012),  // slight height variation
+            mist: []
+        }));
+        this.vents.forEach(v=>{v.mist=Array.from({length:5},()=>this._mkMist(v,true));});
+    },
+    randomVent() { return this.vents[Math.floor(Math.random()*this.vents.length)]; },
+    _mkMist(v,scatter) {
+        return {x:v.x+(Math.random()-.5)*12, y:scatter?v.y-Math.random()*38:v.y-6,
+                r:2+Math.random()*4, vx:(Math.random()-.5)*.14, vy:-(0.16+Math.random()*.26),
+                life:scatter?Math.random():0, alpha:0};
+    },
+    update() {
+        this.vents.forEach(v=>{
+            v.mist.forEach(p=>{
+                p.x+=p.vx; p.y+=p.vy; p.r+=0.04; p.life+=0.006;
+                p.alpha=Math.sin(p.life*Math.PI)*0.10;
+                if(p.life>=1) Object.assign(p,this._mkMist(v,false));
+            });
+        });
+    },
+    draw(ctx) { this.vents.forEach(v=>this._drawVent(ctx,v)); },
+    _drawVent(ctx,v) {
+        const fx=v.x, fy=v.y; ctx.save();
+        const shadowG=ctx.createRadialGradient(fx,fy+14,0,fx,fy+14,50);
+        shadowG.addColorStop(0,'rgba(0,0,0,0.40)'); shadowG.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=shadowG; ctx.beginPath(); ctx.ellipse(fx,fy+16,50,12,0,0,Math.PI*2); ctx.fill();
+        const wg=ctx.createRadialGradient(fx,fy,0,fx,fy,70);
+        wg.addColorStop(0,'rgba(190,105,18,0.42)'); wg.addColorStop(0.3,'rgba(150,75,12,0.22)'); wg.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=wg; ctx.beginPath(); ctx.ellipse(fx,fy,70,32,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#0e0d0c';
+        ctx.beginPath(); ctx.moveTo(fx-36,fy+7); ctx.bezierCurveTo(fx-32,fy+1,fx-18,fy-3,fx-4,fy-4);
+        ctx.bezierCurveTo(fx+8,fy-5,fx+22,fy-3,fx+32,fy+3); ctx.bezierCurveTo(fx+38,fy+8,fx+32,fy+14,fx+12,fy+15);
+        ctx.bezierCurveTo(fx-2,fy+16,fx-18,fy+15,fx-28,fy+11); ctx.bezierCurveTo(fx-38,fy+9,fx-38,fy+8,fx-36,fy+7); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#070605';
+        ctx.beginPath(); ctx.moveTo(fx-18,fy+6); ctx.bezierCurveTo(fx-14,fy+1,fx-5,fy-1,fx+6,fy-1);
+        ctx.bezierCurveTo(fx+16,fy,fx+20,fy+4,fx+18,fy+9); ctx.bezierCurveTo(fx+14,fy+12,fx+3,fy+13,fx-8,fy+12);
+        ctx.bezierCurveTo(fx-18,fy+11,fx-20,fy+9,fx-18,fy+6); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle='rgba(5,4,3,0.85)'; ctx.lineCap='round'; ctx.lineWidth=1.1;
+        [[-30,10,-46,20],[-22,3,-34,-4],[16,2,26,-6],[26,12,40,20],[-8,15,-12,24],[8,14,10,24],[-18,1,-28,-8],[22,-1,34,-10]].forEach(([x1,y1,x2,y2])=>{
+            ctx.beginPath(); ctx.moveTo(fx+x1,fy+y1); ctx.lineTo(fx+x2,fy+y2); ctx.stroke();
+        });
+        v.mist.forEach(p=>{
+            const mg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+            mg.addColorStop(0,`rgba(210,155,80,${p.alpha})`); mg.addColorStop(1,'rgba(0,0,0,0)');
+            ctx.fillStyle=mg; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+        });
+        ctx.restore();
+    },
+};
+
+
+/* ================================================
+   RAT — random surprise, ~30% of games, one fast pass
+================================================ */
+const Rat = {
+    active: false,
+    x: 0, y: 0,
+    dir: 1,
+    vx: 0,
+    legT: 0,
+    tailWag: 0,
+
+    init(W, H) {
+        if (Math.random() > 0.30) { this.active=false; return; }
+        this.active = true;
+        this.dir    = Math.random()>0.5 ? 1 : -1;
+        this.x      = this.dir===1 ? -50 : W+50;
+        this.y      = H*0.80 - 12;
+        this.vx     = this.dir * (3.5 + Math.random()*2.0);
+    },
+
+    update(W, H) {
+        if (!this.active) return;
+        this.x      += this.vx;
+        this.legT   += 0.35;
+        this.tailWag+= 0.22;
+        if (this.x < -80 || this.x > W+80) this.active = false;
+    },
+
+    draw(ctx) {
+        if (!this.active) return;
+        const {x, y, dir, tailWag, legT} = this;
+        ctx.save();
+        ctx.translate(x, y);
+        if (dir === -1) ctx.scale(-1, 1);
+        ctx.fillStyle = '#0d0c0b';
+
+        // Body
+        ctx.beginPath(); ctx.ellipse(0, 0, 14, 7, 0.15, 0, Math.PI*2); ctx.fill();
+        // Head
+        ctx.beginPath(); ctx.ellipse(16, -3, 8, 5, 0.2, 0, Math.PI*2); ctx.fill();
+        // Nose
+        ctx.beginPath(); ctx.ellipse(23, -2, 3, 2, 0, 0, Math.PI*2); ctx.fill();
+        // Ear
+        ctx.beginPath(); ctx.ellipse(13, -8, 3.5, 4.5, -0.3, 0, Math.PI*2); ctx.fill();
+        // Eye
+        ctx.fillStyle = '#252018';
+        ctx.beginPath(); ctx.arc(19, -4, 1.3, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#0d0c0b';
+
+        // Tail
+        ctx.strokeStyle='#0d0c0b'; ctx.lineWidth=2.5; ctx.lineCap='round';
+        ctx.beginPath();
+        ctx.moveTo(-13, 0);
+        ctx.bezierCurveTo(-22, -5, -28, Math.sin(tailWag)*9, -35, Math.sin(tailWag)*13);
+        ctx.stroke();
+
+        // Legs — 3 pairs, animated
+        ctx.lineWidth=2; ctx.lineCap='round';
+        [[-6,8],[1,8],[7,8]].forEach(([lx,ly],i) => {
+            const swing = Math.sin(legT + i*1.1) * 6;
+            ctx.strokeStyle='#0d0c0b';
+            ctx.beginPath(); ctx.moveTo(lx,2); ctx.lineTo(lx+swing, ly); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(lx,2); ctx.lineTo(lx-swing, ly); ctx.stroke();
+        });
+
+        ctx.restore();
+    },
+};
+let bubbles = [];
+let badId   = null;
+let nextId  = 0;
+let spawnT  = 0;
+let popCount = 0;          // how many bubbles popped this game
+const GRACE_POPS = 8;      // bad bubble can't be assigned until after this many pops
+const SPAWN_EVERY = 50;
+const MAX_BUB     = 11;
+const MIN_BUB     = 6;
+
+function mkBubble(W, H, scatter) {
+    const id = nextId++;
+    const r  = 18 + Math.random() * 18;
+    const vent = Vents.vents.length ? Vents.randomVent() : {x:W*0.5, y:H*0.85};
+    const angle = -Math.PI/2 + (Math.random()-.5)*.65;
+    const spd   = 1.0 + Math.random()*1.2;
+    const b = {
+        id,
+        x: vent.x + (Math.random()-.5)*22,
+        y: vent.y - 14,
+        r,
+        vx: Math.cos(angle)*spd*.55,
+        vy: Math.sin(angle)*spd,
+        wobble: Math.random()*Math.PI*2,
+        wFreq:  0.28 + Math.random()*.40,
+        alpha:  0,
+        fadingIn:  true,
+        fadingOut: false,
+        driftT: 0,
+        driftI: 200 + Math.random()*300,
+    };
+    if (scatter) {
+        b.y     = vent.y - 80 - Math.random()*(H*.60);
+        b.x     = W*0.08 + Math.random()*W*0.84;
+        b.alpha = 0.30 + Math.random()*.55;
+        b.fadingIn = b.alpha < 0.85;
+        b.vy    = -(0.28 + Math.random()*.55);
+        b.vx    = (Math.random()-.5)*.35;
+    }
+    return b;
+}
+
+function drawBubble(ctx, b) {
+    if (b.alpha <= 0.01) return;
+    ctx.save(); ctx.globalAlpha = b.alpha;
+    const {x, y, r} = b;
+    const bg = ctx.createRadialGradient(x-r*.28, y-r*.3, r*.04, x, y, r);
+    bg.addColorStop(0,   'rgba(210,175,110,0.11)');
+    bg.addColorStop(0.6, 'rgba(190,155,90,0.06)');
+    bg.addColorStop(1,   'rgba(170,135,75,0.13)');
+    ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(220,185,120,0.38)'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke();
+    const sh=ctx.createRadialGradient(x-r*.33,y-r*.36,0,x-r*.22,y-r*.26,r*.42);
+    sh.addColorStop(0,'rgba(255,240,200,0.60)'); sh.addColorStop(0.5,'rgba(255,230,170,0.14)'); sh.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sh; ctx.beginPath(); ctx.arc(x-r*.22,y-r*.26,r*.42,0,Math.PI*2); ctx.fill();
+    const sh2=ctx.createRadialGradient(x+r*.28,y+r*.30,0,x+r*.28,y+r*.30,r*.18);
+    sh2.addColorStop(0,'rgba(255,235,180,0.25)'); sh2.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sh2; ctx.beginPath(); ctx.arc(x+r*.28,y+r*.30,r*.18,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+}
+
+/* ================================================
+   PARTICLES — amber burst on pop
+================================================ */
+let particles = [];
+function spawnBurst(x, y, r) {
+    const count = 10 + Math.floor(Math.random()*6);
+    for (let i=0;i<count;i++) {
+        const angle=(Math.PI*2*i/count)+(Math.random()-.5)*0.5;
+        const spd=(1.5+Math.random()*2.8)*(r/28);
+        particles.push({x,y,vx:Math.cos(angle)*spd,vy:Math.sin(angle)*spd-0.8,
+            r:3+Math.random()*5,alpha:0.90+Math.random()*.10,life:0,
+            maxLife:40+Math.floor(Math.random()*25)});  // longer life
+    }
+    // Two rings — inner and outer
+    particles.push({ring:true,x,y,r:r*0.4,maxR:r*2.8,alpha:0.8,life:0,maxLife:30});
+    particles.push({ring:true,x,y,r:r*0.2,maxR:r*1.6,alpha:0.5,life:0,maxLife:22});
+}
+function updateParticles() {
+    particles.forEach(p=>{
+        p.life++;
+        if(p.ring){p.r+=(p.maxR-p.r)*0.22;p.alpha=Math.max(0,0.7*(1-p.life/p.maxLife));}
+        else{p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.vx*=0.92;p.vy*=0.92;p.alpha=Math.max(0,0.9*(1-p.life/p.maxLife));p.r*=0.97;}
+    });
+    particles=particles.filter(p=>p.alpha>0&&p.life<p.maxLife);
+}
+function drawParticles(ctx) {
+    particles.forEach(p=>{
+        ctx.save(); ctx.globalAlpha=p.alpha;
+        if(p.ring){ctx.strokeStyle='rgba(220,170,80,0.8)';ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.stroke();}
+        else{const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);g.addColorStop(0,`rgba(240,190,90,${p.alpha})`);g.addColorStop(1,'rgba(180,110,30,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();}
+        ctx.restore();
+    });
+}
+
+function updateBubbles(W, H) {
+    spawnT++;
+    if (spawnT >= SPAWN_EVERY && bubbles.length < MAX_BUB) {
+        spawnT = 0;
+        bubbles.push(mkBubble(W, H, false));
+        ensureBadBubble();
+    }
+    if (bubbles.length < MIN_BUB) spawnT = SPAWN_EVERY;
+
+    // Update each
+    bubbles.forEach(b => {
+        if (b.fadingIn) {
+            b.alpha = Math.min(b.alpha + 0.020, 0.90);
+            if (b.alpha >= 0.90) b.fadingIn = false;
+        }
+
+        b.wobble += 0.011;
+        b.driftT++;
+        if (b.driftT >= b.driftI) {
+            b.driftT = 0;
+            b.driftI = 200 + Math.random()*300;
+            b.vx += (Math.random()-.5)*.18;
+        }
+
+        b.vx += Math.sin(b.wobble * b.wFreq) * 0.003;
+        b.x  += b.vx;
+        b.y  += b.vy;
+        b.vy *= 0.997;   // very light damping — keeps rising a long time
+        b.vx *= 0.974;
+
+        // Cap horizontal drift
+        if (Math.abs(b.vx) > 0.8) b.vx *= 0.85;
+
+        // Wall bounce
+        if (b.x - b.r < 4)       { b.x = b.r + 4;     b.vx =  Math.abs(b.vx)*.35; }
+        if (b.x + b.r > W - 4)   { b.x = W-b.r-4;     b.vx = -Math.abs(b.vx)*.35; }
+
+        // Fade at top
+        if (b.y - b.r < H*.09) b.fadingOut = true;
+        if (b.fadingOut) b.alpha = Math.max(b.alpha - 0.014, 0);
+    });
+
+    // Cull
+    const had = bubbles.length;
+    bubbles = bubbles.filter(b => !(b.fadingOut && b.alpha <= 0));
+    if (bubbles.length < had && !bubbles.find(b=>b.id===badId)) ensureBadBubble();
+
+    // Soft separation
+    for (let i=0;i<bubbles.length;i++) {
+        for (let j=i+1;j<bubbles.length;j++) {
+            const a=bubbles[i], b2=bubbles[j];
+            const dx=b2.x-a.x, dy=b2.y-a.y;
+            const d=Math.sqrt(dx*dx+dy*dy)||.01;
+            const minD=a.r+b2.r+2;
+            if (d<minD) {
+                const push=(minD-d)*0.09, nx=dx/d, ny=dy/d;
+                a.x-=nx*push; a.y-=ny*push;
+                b2.x+=nx*push; b2.y+=ny*push;
+            }
+        }
+    }
+}
+
+function ensureBadBubble() {
+    // Don't assign bad bubble until player has popped at least GRACE_POPS bubbles
+    if (popCount < GRACE_POPS) { badId = null; return; }
+    if (bubbles.find(b=>b.id===badId && !b.fadingOut && b.alpha>0.28)) return;
+    const pool = bubbles.filter(b=>!b.fadingOut && b.alpha>0.28);
+    if (!pool.length) return;
+    badId = pool[Math.floor(Math.random()*pool.length)].id;
+}
+
+/* ================================================
+   DYING STATE — staggered chain pop with amber bursts
+================================================ */
+let dyingT    = 0;
+let shockwaves = [];
+let chainDone  = false;
+
+function triggerChainPop(badX, badY, snapshot) {
+    chainDone = false;
+
+    if (!snapshot || snapshot.length === 0) {
+        setTimeout(() => { if (gs===GS.DYING) { shockwaves=[]; chainDone=true; } }, 1200);
+        return;
+    }
+
+    // All remaining bubbles explode simultaneously
+    snapshot.forEach(s => spawnBurst(s.x, s.y, s.r));
+
+    // Rapid-fire pops — satisfying cluster
+    snapshot.forEach((s, i) => {
+        setTimeout(() => { if (gs===GS.DYING) SoundEngine.playPop(); }, i * 30);
+    });
+
+    // Wait for particles to settle then end
+    setTimeout(() => { if (gs===GS.DYING) { shockwaves=[]; chainDone=true; } }, 1800);
+}
+
+function updateDying() {
+    dyingT++;
+    shockwaves=shockwaves.filter(sw=>sw.alpha>0);
+    shockwaves.forEach(sw=>{sw.r+=(sw.maxR-sw.r)*0.055;sw.alpha=Math.max(0,sw.alpha-0.013);});
+    updateParticles();
+    if (chainDone) { chainDone=false; _showEnd(); }
+}
+
+function drawDyingFx(ctx) {
+    shockwaves.forEach(sw=>{
+        ctx.save(); ctx.globalAlpha=sw.alpha;
+        ctx.strokeStyle='rgba(220,170,70,0.65)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(sw.x,sw.y,sw.r,0,Math.PI*2); ctx.stroke();
+        ctx.restore();
+    });
+    drawParticles(ctx);
+}
+
+/* ================================================
+   GAME STATE
+================================================ */
+const GS = { MENU:'menu', PLAY:'play', DYING:'dying', END:'end' };
+let gs      = GS.MENU;
+let score   = 0;
+let best    = parseInt(localStorage.getItem('bb_best_v4'))||0;
+let showCounter = false;
+
+function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('end-screen').classList.remove('show','fade');
+    document.getElementById('end-screen').style.display = 'none';
+    showCounter = false;
+
+    score   = 0;
+    bubbles = [];
+    badId   = null;
+    spawnT  = 0;
+    nextId  = 0;
+    dyingT  = 0;
+    popCount   = 0;
+    particles  = [];
+    shockwaves = [];
+    chainDone  = false;
+
+    // Pick a fresh gameplay scene (not ruins)
+    bakeScene(W, H);
+
+    // Seed scattered bubbles
+    for (let i=0;i<MIN_BUB+2;i++) bubbles.push(mkBubble(W, H, true));
+    ensureBadBubble();
+
+    gs = GS.PLAY;
+    showCounter = true;
+    document.getElementById('exit-btn').style.display = 'block';
+    Rat.init(W, H);
+    SoundEngine.resume();
+}
+
+function _popGood(b, idx) {
+    score++;
+    popCount++;
+    _updateCounter();
+    SoundEngine.playPop();
+    spawnBurst(b.x, b.y, b.r);
+    b.fadingOut = true;
+    setTimeout(() => {
+        bubbles = bubbles.filter(x=>x.id!==b.id);
+        ensureBadBubble();
+    }, 220);
+}
+
+function _popBad(b) {
+    document.getElementById('exit-btn').style.display = 'none';
+    showCounter = false;
+    const bx = b.x, by = b.y;
+
+    // Bad bubble's big burst + fart
+    spawnBurst(bx, by, b.r * 1.6);
+    SoundEngine.playWhoosh();
+
+    // Wipe all bubbles immediately — screen goes clean
+    bubbles = [];
+    gs = GS.DYING;
+    dyingT = 0;
+    shockwaves = [];
+    chainDone = false;
+    if (score > best) { best = score; localStorage.setItem('bb_best_v4', best); }
+
+    // Slow shockwave ring expands while we wait
+    shockwaves.push({ x:bx, y:by, r:8, maxR:Math.max(W,H)*.85, alpha:0.70 });
+
+    SoundEngine.fadeOut(4.0);
+
+    // 3 seconds of silence, then straight to end screen
+    setTimeout(() => {
+        if (gs === GS.DYING) { shockwaves=[]; chainDone=true; }
+    }, 3000);
+}
+
+function _showEnd() {
+    gs = GS.END;
+    sceneBitmap = menuBitmap;
+    showCounter = false;
+    document.getElementById('exit-btn').style.display = 'none';
+    document.getElementById('end-num').textContent  = score;
+    document.getElementById('end-best').textContent = 'best \u2014 ' + best;
+    const el = document.getElementById('end-screen');
+    el.style.display = 'flex';
+    el.classList.add('show');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('fade')));
+}
+
+function goHome() {
+    gs = GS.MENU;
+    bubbles = [];
+    badId = null;
+    shockwaves = [];
+    particles = [];
+    chainDone = false;
+    Rat.active = false;
+    sceneBitmap = menuBitmap;
+    showCounter = false;
+    document.getElementById('exit-btn').style.display = 'none';
+    document.getElementById('end-screen').classList.remove('show','fade');
+    document.getElementById('end-screen').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'flex';
+    SoundEngine.fadeOut(0.8);
+    for (let i=0;i<6;i++) bubbles.push(mkBubble(W, H, true));
+}
+
+function _updateCounter() {
+    // counter drawn on canvas
+    // counter drawn on canvas
+}
+
+/* ================================================
+   HIT TEST
+================================================ */
+function onTap(cx, cy) {
+    if (gs === GS.MENU || gs === GS.END) { startGame(); return; }
+    if (gs !== GS.PLAY) return;
+
+    for (let i = bubbles.length-1; i>=0; i--) {
+        const b = bubbles[i];
+        if (b.fadingOut || b.alpha<0.15) continue;
+        const dx=cx-b.x, dy=cy-b.y;
+        const tapR = b.r + 10; // generous tap area for mobile
+        if (dx*dx+dy*dy <= tapR*tapR) {
+            if (b.id===badId) _popBad(b);
+            else              _popGood(b, i);
+            return;
+        }
+    }
+}
+
+/* ================================================
+   SOUND ENGINE — file-based audio
+================================================ */
+const SoundEngine = {
+    actx: null, gain: null, on: false,
+    _bubblesEl: null, _popEl: null, _fartEl: null,
+
+    resume() {
+        if (this.on) { this._setVol(0.5); return; }
+        try {
+            // Unlock AudioContext on user gesture (mobile requirement)
+            this.actx = new (window.AudioContext||window.webkitAudioContext)();
+            if (this.actx.state === 'suspended') this.actx.resume();
+            this._initAudio();
+            this.on = true;
+        } catch(e){}
+    },
+
+    _initAudio() {
+        // Ambient bubbling loop
+        this._bubblesEl = new Audio('bubbles.mp3');
+        this._bubblesEl.loop = true;
+        this._bubblesEl.volume = 0.0;
+        this._bubblesEl.play().catch(()=>{});
+        // Fade in
+        let v = 0;
+        const fade = setInterval(() => {
+            v = Math.min(v + 0.02, 0.45);
+            if (this._bubblesEl) this._bubblesEl.volume = v;
+            if (v >= 0.45) clearInterval(fade);
+        }, 60);
+
+        // Preload one-shot sounds
+        this._popEl  = new Audio('pop.mp3');
+        this._fartEl = new Audio('fart.mp3');
+        this._popEl.volume  = 0.7;
+        this._fartEl.volume = 0.9;
+    },
+
+    _setVol(v) {
+        if (this._bubblesEl) this._bubblesEl.volume = v;
+    },
+
+    fadeOut(sec) {
+        if (!this._bubblesEl) return;
+        const start = this._bubblesEl.volume;
+        const steps = sec * 20;
+        const dec   = start / steps;
+        let n = 0;
+        const fade = setInterval(() => {
+            n++;
+            if (this._bubblesEl) this._bubblesEl.volume = Math.max(0, start - dec*n);
+            if (n >= steps) clearInterval(fade);
+        }, 1000/20);
     },
 
     playPop() {
-        if (!this.sounds.pop) return;
-        const s = this.sounds.pop.cloneNode();
-        s.volume = 0.7;
-        s.play().catch(() => {});
-    },
-
-    playFart() {
-        if (!this.sounds.fart) return;
-        const s = this.sounds.fart.cloneNode();
-        s.volume = 0.9;
-        s.play().catch(() => {});
-    },
-
-    playChainPop() {
-        if (!this.sounds.chainpop) return;
-        const s = this.sounds.chainpop.cloneNode();
-        s.volume = 0.15;
-        s.play().catch(() => {});
-    },
-
-    // Synthesized bubbly sound for the typewriter/dissolve moment
-    playBubbly() {
+        if (!this._popEl) return;
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const totalDuration = 2.2;
-            const bubbleCount = 18;
+            // Clone so rapid taps overlap cleanly
+            const s = this._popEl.cloneNode();
+            s.volume = 0.6 + Math.random()*0.2;
+            s.play().catch(()=>{});
+        } catch(e){}
+    },
 
-            for (let i = 0; i < bubbleCount; i++) {
-                const delay = i * (totalDuration / bubbleCount) * (0.7 + Math.random() * 0.6);
-                const startFreq = 300 + Math.random() * 500;
-                const endFreq   = startFreq * (1.8 + Math.random() * 1.2);
-
-                setTimeout(() => {
-                    try {
-                        const osc  = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        const filter = ctx.createBiquadFilter();
-
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
-                        osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + 0.12);
-
-                        filter.type = 'bandpass';
-                        filter.frequency.value = startFreq;
-                        filter.Q.value = 4;
-
-                        const vol = 0.06 + Math.random() * 0.06;
-                        gain.gain.setValueAtTime(0, ctx.currentTime);
-                        gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.02);
-                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
-
-                        osc.connect(filter);
-                        filter.connect(gain);
-                        gain.connect(ctx.destination);
-
-                        osc.start(ctx.currentTime);
-                        osc.stop(ctx.currentTime + 0.15);
-                    } catch(e) {}
-                }, delay * 1000);
-            }
-            // Auto-close after done
-            setTimeout(() => { try { ctx.close(); } catch(e) {} }, (totalDuration + 0.5) * 1000);
-        } catch(e) {}
-    }
+    playWhoosh() {
+        if (!this._fartEl) return;
+        try {
+            const s = this._fartEl.cloneNode();
+            s.volume = 0.9;
+            s.play().catch(()=>{});
+        } catch(e){}
+    },
 };
 
-/* ============================================
-   SCENE RENDERER (bottle + cloud)
-============================================ */
-const SceneRenderer = {
-    canvas: null,
-    ctx: null,
-    color: '#fcd831',
-    darkColor: '#b89a00',
-    isRainbow: false,
-    animFrame: null,
-    time: 0,
-    liquidDrops: [],
+function drawCounter(ctx) {
+    if (!showCounter) return;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,1)';
+    ctx.shadowBlur = 20;
+    ctx.font = "300 3.8rem 'Cormorant Garamond', Georgia, serif";
+    ctx.fillStyle = 'rgba(232,212,184,0.96)';
+    ctx.fillText(score, 22, 72);
+    ctx.font = "300 0.9rem 'Cormorant Garamond', Georgia, serif";
+    ctx.fillStyle = 'rgba(200,180,152,0.75)';
+    ctx.shadowBlur = 12;
+    ctx.fillText('BEST — ' + best, 24, 105);
+    ctx.restore();
+}
+let canvas, ctx, W, H;
 
-    init(canvas, color, darkColor, isRainbow = false) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.color = color;
-        this.darkColor = darkColor;
-        this.isRainbow = isRainbow;
-        this.time = 0;
-        this.liquidDrops = [];
-        this.resize();
-        this.startAnimation();
-    },
-
-    resize() {
-        if (!this.canvas) return;
-        const parent = this.canvas.parentElement;
-        this.canvas.width = parent.clientWidth;
-        this.canvas.height = parent.clientHeight * 0.32;
-    },
-
-    stop() {
-        if (this.animFrame) cancelAnimationFrame(this.animFrame);
-        this.animFrame = null;
-    },
-
-    startAnimation() {
-        this.stop();
-        const animate = () => {
-            this.time += 0.016;
-            this.draw();
-            this.animFrame = requestAnimationFrame(animate);
-        };
-        this.animFrame = requestAnimationFrame(animate);
-    },
-
-    draw() {
-        const { ctx, canvas, color, darkColor, time } = this;
-        if (!ctx) return;
-        const W = canvas.width, H = canvas.height;
-        ctx.clearRect(0, 0, W, H);
-
-        this.drawCloud(W, H, color, darkColor, time);
-    },
-
-    drawCloud(W, H, color, darkColor, time) {
-        const ctx = this.ctx;
-        const baseY = H * 0.62; // taller lava — starts higher
-
-        let lavaGrad;
-        if (this.isRainbow) {
-            lavaGrad = ctx.createLinearGradient(0, 0, W, 0);
-            lavaGrad.addColorStop(0,    '#f60000');
-            lavaGrad.addColorStop(0.16, '#f35329');
-            lavaGrad.addColorStop(0.33, '#fcd831');
-            lavaGrad.addColorStop(0.5,  '#7ed957');
-            lavaGrad.addColorStop(0.66, '#0cc0df');
-            lavaGrad.addColorStop(0.83, '#5e17eb');
-            lavaGrad.addColorStop(1,    '#cb6ce6');
-        } else {
-            lavaGrad = ctx.createLinearGradient(0, baseY, 0, H);
-            lavaGrad.addColorStop(0,   hexToRgba(color, 1.0));
-            lavaGrad.addColorStop(0.2, hexToRgba(color, 0.88));
-            lavaGrad.addColorStop(0.6, hexToRgba(darkColor, 0.95));
-            lavaGrad.addColorStop(1,   hexToRgba(darkColor, 1.0));
-        }
-
-        // Three-layer wave — bigger and slower than before
-        const wave = (x) =>
-            Math.sin(x * 0.018 + time * 0.38) * 14 +
-            Math.sin(x * 0.032 + time * 0.22 + 1.5) * 8 +
-            Math.sin(x * 0.055 + time * 0.51 + 3.1) * 4;
-
-        ctx.beginPath();
-        ctx.moveTo(0, H);
-        ctx.lineTo(0, baseY + wave(0));
-        for (let x = 4; x <= W; x += 4) ctx.lineTo(x, baseY + wave(x));
-        ctx.lineTo(W, H);
-        ctx.closePath();
-        ctx.fillStyle = lavaGrad;
-        ctx.fill();
-
-        // Sheen band following the surface
-        ctx.beginPath();
-        ctx.moveTo(0, baseY + wave(0));
-        for (let x = 4; x <= W; x += 4) ctx.lineTo(x, baseY + wave(x));
-        for (let x = W; x >= 0; x -= 4) ctx.lineTo(x, baseY + wave(x) + 22);
-        ctx.closePath();
-        ctx.fillStyle = hexToRgba(color, 0.20);
-        ctx.fill();
-    },
-
-    drawBottle(W, H, color, darkColor, time) {
-        const ctx = this.ctx;
-
-        // Bottle on LEFT side, mostly off-screen — only right end (body + spout) peeking in
-        const cx = -W * 0.05, cy = H * 0.22;
-        const bodyW = W * 0.34, bodyH = H * 0.12;
-        const neckW = bodyH * 0.5, neckLen = bodyW * 0.35;
-
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(-0.12);
-
-        // === BOTTLE BODY ===
-        const bodyGrad = ctx.createLinearGradient(0, -bodyH/2, 0, bodyH/2);
-        bodyGrad.addColorStop(0, 'rgba(215,238,255,0.62)');
-        bodyGrad.addColorStop(0.45, 'rgba(178,212,242,0.48)');
-        bodyGrad.addColorStop(1, 'rgba(122,172,212,0.36)');
-
-        ctx.beginPath();
-        ctx.roundRect(-bodyW*0.1, -bodyH/2, bodyW, bodyH, bodyH*0.38);
-        ctx.fillStyle = bodyGrad;
-        ctx.strokeStyle = 'rgba(200,232,255,0.58)';
-        ctx.lineWidth = 1.5;
-        ctx.fill();
-        ctx.stroke();
-
-        // === NECK extends RIGHT (liquid pours rightward into scene) ===
-        ctx.beginPath();
-        ctx.roundRect(-bodyW*0.1 + bodyW - 2, -neckW/2, neckLen, neckW, neckW*0.45);
-        ctx.fillStyle = 'rgba(192,222,252,0.52)';
-        ctx.strokeStyle = 'rgba(202,232,255,0.52)';
-        ctx.lineWidth = 1.5;
-        ctx.fill();
-        ctx.stroke();
-
-        // === LIQUID INSIDE ===
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(-bodyW*0.1 + 2, -bodyH/2 + 2, bodyW - 4, bodyH - 4, bodyH*0.34);
-        ctx.clip();
-        const liqGrad = ctx.createLinearGradient(-bodyW*0.1, 0, -bodyW*0.1 + bodyW, 0);
-        liqGrad.addColorStop(0, hexToRgba(darkColor, 0.88));
-        liqGrad.addColorStop(0.55, hexToRgba(color, 0.72));
-        liqGrad.addColorStop(1, hexToRgba(color, 0.52));
-        ctx.fillStyle = liqGrad;
-        ctx.fillRect(-bodyW*0.1 + 2, -bodyH/2 + 2, bodyW * 0.78, bodyH - 4);
-        ctx.restore();
-
-        // === GLASS SHINE ===
-        ctx.beginPath();
-        ctx.roundRect(-bodyW*0.08 + 4, -bodyH/2 + 3, bodyW*0.12, bodyH*0.48, 3);
-        ctx.fillStyle = 'rgba(255,255,255,0.26)';
-        ctx.fill();
-
-        ctx.restore();
-
-        this.drawPouringLiquid(W, H, color, darkColor, time, cx, cy, bodyW, bodyH, neckLen);
-    },
-
-    drawPouringLiquid(W, H, color, darkColor, time, cx, cy, bodyW, bodyH, neckLen) {
-        const ctx = this.ctx;
-
-        const angle = -0.12;
-        const spoutLocalX = -bodyW * 0.1 + bodyW + neckLen - 2;
-        const spoutX = cx + Math.cos(angle) * spoutLocalX;
-        const spoutY = cy + Math.sin(angle) * spoutLocalX + bodyH * 0.12;
-
-        const cloudY = H * 0.38;
-        const wobble = Math.sin(time * 1.9) * 2;
-        const sw = 4.5 + Math.sin(time * 1.5) * 1.4;
-
-        const grad = ctx.createLinearGradient(spoutX, spoutY, spoutX + 12 + wobble, cloudY);
-        grad.addColorStop(0, hexToRgba(color, 0.92));
-        grad.addColorStop(0.65, hexToRgba(color, 0.65));
-        grad.addColorStop(1, hexToRgba(color, 0.2));
-
-        ctx.beginPath();
-        ctx.moveTo(spoutX, spoutY - sw/2);
-        ctx.bezierCurveTo(
-            spoutX + (cloudY - spoutY) * 0.28, spoutY - sw - 2 + wobble * 0.25,
-            spoutX + (cloudY - spoutY) * 0.6 + wobble, cloudY - 10,
-            spoutX + (cloudY - spoutY) * 0.48 + wobble + 6, cloudY
-        );
-        ctx.bezierCurveTo(
-            spoutX + (cloudY - spoutY) * 0.6 + wobble + sw, cloudY - 10,
-            spoutX + (cloudY - spoutY) * 0.28, spoutY + sw * 0.5 + wobble * 0.25,
-            spoutX, spoutY + sw/2
-        );
-        ctx.closePath();
-        ctx.fillStyle = grad;
-        ctx.fill();
-
-        // Drip
-        const phase = (time * 0.88) % 1.0;
-        if (phase < 0.9) {
-            const px = spoutX + (cloudY - spoutY) * 0.48 * phase + wobble * phase + 4;
-            const py = spoutY + (cloudY - spoutY) * phase;
-            const dr = 2.5 + phase * 4.5;
-            ctx.beginPath();
-            ctx.arc(px, py, dr, 0, Math.PI * 2);
-            ctx.fillStyle = hexToRgba(color, 0.72 - phase * 0.32);
-            ctx.fill();
-        }
+function resize() {
+    // Use screen dimensions as fallback — most reliable on mobile WebViews
+    W = window.innerWidth  || document.documentElement.clientWidth  || screen.width;
+    H = window.innerHeight || document.documentElement.clientHeight || screen.height;
+    canvas.width  = W;
+    canvas.height = H;
+    Vents.init(W, H);
+    bakeMenuScene(W, H);
+    if (gs === GS.MENU || gs === GS.END) {
+        sceneBitmap = menuBitmap;
+    } else if (gs === GS.PLAY || gs === GS.DYING) {
+        bakeScene(W, H);
     }
-};
-
-
-/* ============================================
-   LIGHTNING RENDERER
-============================================ */
-const LightningRenderer = {
-    canvas: null,
-    ctx: null,
-    bolts: [],
-    animFrame: null,
-    time: 0,
-    color: '#fff',
-
-    init(canvas, color) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.color = color;
-        this.bolts = [];
-        this.resize();
-    },
-
-    resize() {
-        if (!this.canvas) return;
-        this.canvas.width = this.canvas.parentElement.clientWidth;
-        this.canvas.height = this.canvas.parentElement.clientHeight;
-    },
-
-    stop() {
-        if (this.animFrame) cancelAnimationFrame(this.animFrame);
-        this.animFrame = null;
-        if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    },
-
-    fire(fromX, fromY, targets) {
-        this.stop();
-        this.bolts = targets.map(t => ({
-            x1: fromX, y1: fromY,
-            x2: t.x, y2: t.y,
-            life: 1.0
-        }));
-        this.time = 0;
-        const animate = () => {
-            this.time += 0.05;
-            this.drawBolts();
-            this.bolts.forEach(b => b.life -= 0.04);
-            if (this.bolts.some(b => b.life > 0)) {
-                this.animFrame = requestAnimationFrame(animate);
-            } else {
-                this.stop();
-            }
-        };
-        this.animFrame = requestAnimationFrame(animate);
-    },
-
-    drawBolts() {
-        const { ctx, canvas, bolts, color } = this;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        bolts.forEach(bolt => {
-            if (bolt.life <= 0) return;
-            this.drawLightningBolt(bolt.x1, bolt.y1, bolt.x2, bolt.y2, bolt.life, color);
-        });
-    },
-
-    drawLightningBolt(x1, y1, x2, y2, alpha, color) {
-        const ctx = this.ctx;
-        const points = this.generateLightningPoints(x1, y1, x2, y2, 4);
-
-        // Outer glow
-        ctx.save();
-        ctx.globalAlpha = alpha * 0.3;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 6;
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = color;
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        points.forEach(p => ctx.lineTo(p.x, p.y));
-        ctx.stroke();
-
-        // Core — slightly lighter version of scene color
-        ctx.globalAlpha = alpha * 0.9;
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 1.5;
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = this.color;
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        points.forEach(p => ctx.lineTo(p.x, p.y));
-        ctx.stroke();
-        ctx.restore();
-    },
-
-    generateLightningPoints(x1, y1, x2, y2, detail) {
-        let points = [{ x: x1, y: y1 }, { x: x2, y: y2 }];
-        for (let i = 0; i < detail; i++) {
-            const newPoints = [points[0]];
-            for (let j = 1; j < points.length; j++) {
-                const mx = (points[j-1].x + points[j].x) / 2;
-                const my = (points[j-1].y + points[j].y) / 2;
-                const offset = (Math.random() - 0.5) * 40 * Math.pow(0.5, i);
-                const dx = points[j].y - points[j-1].y;
-                const dy = -(points[j].x - points[j-1].x);
-                const len = Math.sqrt(dx*dx + dy*dy) || 1;
-                newPoints.push({ x: mx + (dx/len)*offset, y: my + (dy/len)*offset });
-                newPoints.push(points[j]);
-            }
-            points = newPoints;
-        }
-        return points;
-    }
-};
-
-/* ============================================
-   MENU BUBBLES (floating bg on start screen)
-============================================ */
-const MenuBubbles = {
-    canvas: null,
-    ctx: null,
-    bubbles: [],
-    animFrame: null,
-
-    init(canvas) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.bubbles = [];
-        this.resize();
-        this.spawn();
-        this.start();
-    },
-
-    resize() {
-        if (!this.canvas) return;
-        this.canvas.width = this.canvas.parentElement.clientWidth;
-        this.canvas.height = this.canvas.parentElement.clientHeight;
-    },
-
-    spawn() {
-        const W = this.canvas.width, H = this.canvas.height;
-        for (let i = 0; i < 18; i++) {
-            this.bubbles.push({
-                x: Math.random() * W,
-                y: Math.random() * H,
-                r: 12 + Math.random() * 30,
-                speed: 0.2 + Math.random() * 0.5,
-                wobble: Math.random() * Math.PI * 2,
-                wobbleSpeed: 0.008 + Math.random() * 0.012,
-                alpha: 0.04 + Math.random() * 0.1
-            });
-        }
-    },
-
-    stop() {
-        if (this.animFrame) cancelAnimationFrame(this.animFrame);
-        this.animFrame = null;
-    },
-
-    start() {
-        this.stop();
-        const animate = () => {
-            this.draw();
-            this.animFrame = requestAnimationFrame(animate);
-        };
-        this.animFrame = requestAnimationFrame(animate);
-    },
-
-    draw() {
-        const { ctx, canvas, bubbles } = this;
-        if (!ctx) return;
-        const W = canvas.width, H = canvas.height;
-        ctx.clearRect(0, 0, W, H);
-
-        bubbles.forEach(b => {
-            b.wobble += b.wobbleSpeed;
-            b.y -= b.speed;
-            b.x += Math.sin(b.wobble) * 0.4;
-            if (b.y < -b.r * 2) {
-                b.y = H + b.r;
-                b.x = Math.random() * W;
-            }
-
-            // Draw soap bubble
-            const grad = ctx.createRadialGradient(b.x - b.r*0.3, b.y - b.r*0.3, 0, b.x, b.y, b.r);
-            grad.addColorStop(0, `rgba(255,255,255,${b.alpha * 2})`);
-            grad.addColorStop(0.4, `rgba(255,255,255,${b.alpha})`);
-            grad.addColorStop(1, `rgba(255,255,255,${b.alpha * 0.3})`);
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-            ctx.fillStyle = grad;
-            ctx.fill();
-            ctx.strokeStyle = `rgba(255,255,255,${b.alpha * 3})`;
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
-        });
-    }
-};
-
-/* ============================================
-   CLOUD CARD RENDERER (end screen)
-============================================ */
-/* ============================================
-   END SCREEN FLOATING BUBBLES
-============================================ */
-const EndBubbles = {
-    canvas: null, ctx: null, bubbles: [], animId: null, color: '#ffffff',
-
-    start(canvas, sceneColor) {
-        this.stop();
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.color = sceneColor;
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        this.bubbles = [];
-        for (let i = 0; i < 22; i++) this.addBubble(true);
-        this.animate();
-    },
-
-    stop() {
-        if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
-        this.bubbles = [];
-    },
-
-    addBubble(initial = false) {
-        const W = this.canvas.width, H = this.canvas.height;
-        const size = 10 + Math.random() * 40;
-        this.bubbles.push({
-            x: Math.random() * W,
-            y: initial ? Math.random() * H : H + size,
-            size,
-            speed: 0.18 + Math.random() * 0.35,
-            wobble: Math.random() * Math.PI * 2,
-            wobbleSpeed: 0.008 + Math.random() * 0.012,
-            wobbleAmt: 0.4 + Math.random() * 0.8,
-            opacity: 0.08 + Math.random() * 0.22,
-        });
-    },
-
-    animate() {
-        const W = this.canvas.width, H = this.canvas.height;
-        this.ctx.clearRect(0, 0, W, H);
-        const r = parseInt(this.color.slice(1,3), 16);
-        const g = parseInt(this.color.slice(3,5), 16);
-        const b = parseInt(this.color.slice(5,7), 16);
-
-        this.bubbles.forEach((bub, i) => {
-            bub.wobble += bub.wobbleSpeed;
-            bub.y -= bub.speed;
-            bub.x += Math.sin(bub.wobble) * bub.wobbleAmt;
-
-            if (bub.y < -bub.size * 2) {
-                this.bubbles[i] = {
-                    x: Math.random() * W, y: H + bub.size,
-                    size: 10 + Math.random() * 40,
-                    speed: 0.18 + Math.random() * 0.35,
-                    wobble: Math.random() * Math.PI * 2,
-                    wobbleSpeed: 0.008 + Math.random() * 0.012,
-                    wobbleAmt: 0.4 + Math.random() * 0.8,
-                    opacity: 0.08 + Math.random() * 0.22,
-                };
-                return;
-            }
-
-            this.ctx.save();
-            this.ctx.globalAlpha = bub.opacity;
-            const grad = this.ctx.createRadialGradient(
-                bub.x - bub.size*0.25, bub.y - bub.size*0.25, 0,
-                bub.x, bub.y, bub.size
-            );
-            grad.addColorStop(0, `rgba(255,255,255,0.8)`);
-            grad.addColorStop(0.4, `rgba(${r},${g},${b},0.6)`);
-            grad.addColorStop(1, `rgba(${r},${g},${b},0.1)`);
-            this.ctx.beginPath();
-            this.ctx.arc(bub.x, bub.y, bub.size, 0, Math.PI * 2);
-            this.ctx.fillStyle = grad;
-            this.ctx.fill();
-            // Ring
-            this.ctx.strokeStyle = `rgba(255,255,255,0.2)`;
-            this.ctx.lineWidth = 1;
-            this.ctx.stroke();
-            this.ctx.restore();
-        });
-
-        this.animId = requestAnimationFrame(() => this.animate());
-    }
-};
-
-/* ============================================
-   HELPER
-============================================ */
-function hexToRgba(hex, alpha) {
-    const r = parseInt(hex.slice(1,3), 16);
-    const g = parseInt(hex.slice(3,5), 16);
-    const b = parseInt(hex.slice(5,7), 16);
-    return `rgba(${r},${g},${b},${alpha})`;
 }
 
-/* ============================================
-   GAME STATE
-============================================ */
-const GameState = { MENU: 'menu', PLAYING: 'playing', CHAIN_REACTION: 'chain', GAME_OVER: 'gameover' };
-
-const Game = {
-    state: GameState.MENU,
-    bubbles: [],
-    badBubbleId: null,
-    score: 0,
-    bestScore: 0,
-    colorBests: {},       // per-color best scores
-    streak: 0,            // current pop streak
-    bestStreak: 0,        // best streak this round
-    lastPopTime: 0,       // for streak timing
-    STREAK_WINDOW: 1200,  // ms between pops to count as streak
-    popsSinceReassign: 0,
-    animationId: null,
-    respawnTimeouts: [],
-    playAreaRect: null,
-    currentScene: null,
-    _gameId: 0,
-
-    init() {
-        this.playArea = document.getElementById('play-area');
-        this.gameContainer = document.getElementById('game-container');
-        this.scoreDisplay = document.getElementById('score-display');
-        this.startScreen = document.getElementById('start-screen');
-        this.gameOverScreen = document.getElementById('game-over-screen');
-        this.finalScoreEl = document.getElementById('final-score');
-        this.bestScoreEl = document.getElementById('best-score');
-        this.sceneCanvas = document.getElementById('scene-canvas');
-        this.lightningCanvas = document.getElementById('lightning-canvas');
-        this.exitButton = document.getElementById('exit-button');
-this.streakFlash = document.getElementById('streak-flash');
-        this.timerRing = document.getElementById('timer-ring');
-        this.timerArc = document.getElementById('timer-arc');
-
-        this.bestScore = parseInt(localStorage.getItem('badBubbleBest')) || 0;
-        // Load per-color bests
-        SCENES.forEach(s => {
-            this.colorBests[s.id] = parseInt(localStorage.getItem('bb_best_' + s.id)) || 0;
-        });
-
-        // Build color grid
-        this.buildColorGrid();
-
-        // Init menu bubbles
-        const menuCanvas = document.getElementById('menu-bubbles-canvas');
-        menuCanvas.width = this.gameContainer.clientWidth;
-        menuCanvas.height = this.gameContainer.clientHeight;
-        MenuBubbles.init(menuCanvas);
-
-        // Init lightning
-        LightningRenderer.init(this.lightningCanvas, '#fff');
-
-        // Draw cloud card
-
-        // Buttons
-        // Credits
-        document.getElementById('credits-button').addEventListener('click', () => {
-            document.getElementById('credits-overlay').classList.add('visible');
-        });
-        document.getElementById('credits-close').addEventListener('click', () => {
-            document.getElementById('credits-overlay').classList.remove('visible');
-        });
-
-        document.getElementById('play-again-button').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.startGame(this.currentScene);
-        });
-        document.getElementById('home-button').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.goHome();
-        });
-        this.exitButton.addEventListener('click', (e) => { e.stopPropagation(); this.goHome(); });
-        document.getElementById('stats-button').addEventListener('click', () => this.showStats());
-        document.getElementById('stats-close-btn').addEventListener('click', () => document.getElementById('stats-overlay').classList.remove('visible'));
-        document.getElementById('stats-reset-btn').addEventListener('click', () => {
-            if (confirm('Reset all scores? This cannot be undone.')) { this.resetAllScores(); this.showStats(); }
-        });
-        window.addEventListener('resize', () => this.updatePlayAreaRect());
-    },
-
-    showStats() {
-        this.bestScore = parseInt(localStorage.getItem('badBubbleBest')) || 0;
-        SCENES.forEach(s => { this.colorBests[s.id] = parseInt(localStorage.getItem('bb_best_' + s.id)) || 0; });
-        const totalPops   = parseInt(localStorage.getItem('bb_total_pops'))   || 0;
-        const gamesPlayed = parseInt(localStorage.getItem('bb_games_played')) || 0;
-        document.getElementById('stats-summary-grid').innerHTML = `
-            <div class="stats-card"><span class="stats-card-label">Best Score</span><span class="stats-card-value">${this.bestScore}</span></div>
-            <div class="stats-card"><span class="stats-card-label">Games Played</span><span class="stats-card-value">${gamesPlayed}</span></div>
-            <div class="stats-card"><span class="stats-card-label">Total Pops</span><span class="stats-card-value">${totalPops}</span></div>
-            <div class="stats-card"><span class="stats-card-label">Colors Tried</span><span class="stats-card-value">${SCENES.filter(s=>(this.colorBests[s.id]||0)>0).length}</span></div>`;
-        const list = document.getElementById('stats-color-list');
-        list.innerHTML = '';
-        SCENES.forEach(s => {
-            const best = this.colorBests[s.id] || 0;
-            const row = document.createElement('div');
-            row.className = 'stats-color-row';
-            row.innerHTML = `<div class="stats-color-dot" style="background:${s.isRainbow?'#cb6ce6':s.color}"></div><span class="stats-color-name">${s.name}</span><span class="stats-color-best">${best>0?'★ '+best:'—'}</span>`;
-            list.appendChild(row);
-        });
-        document.getElementById('stats-overlay').classList.add('visible');
-    },
-    resetAllScores() {
-        ['badBubbleBest','bb_total_pops','bb_games_played'].forEach(k => localStorage.removeItem(k));
-        SCENES.forEach(s => localStorage.removeItem('bb_best_' + s.id));
-        this.bestScore = 0;
-        SCENES.forEach(s => { this.colorBests[s.id] = 0; });
-        this.buildColorGrid();
-    },
-    buildColorGrid() {
-        const grid = document.getElementById('color-grid');
-        grid.innerHTML = '';
-        SCENES.forEach((scene, i) => {
-            const best = this.colorBests[scene.id] || 0;
-            // First 4 scenes always unlocked; rest unlock at score 5 in any color
-            const totalBest = parseInt(localStorage.getItem('badBubbleBest')) || 0;
-            const locked = i >= 4 && totalBest < 5;
-
-            const opt = document.createElement('div');
-            opt.className = 'color-option';
-            opt.style.cursor = locked ? 'not-allowed' : 'pointer';
-            opt.innerHTML = `
-                <div class="color-option-wrap">
-                    <div class="color-circle ${locked ? 'locked' : ''}" style="--pulse-delay: ${(i * 0.18).toFixed(2)}s; background: ${scene.isRainbow ? 'linear-gradient(180deg, #e40303 0% 16.6%, #ff8c00 16.6% 33.2%, #ffed00 33.2% 49.8%, #008026 49.8% 66.4%, #004dff 66.4% 83%, #750787 83% 100%)' : scene.color}; position:relative;">
-                        ${locked ? '<span class="lock-icon">🔒</span>' : ''}
-                    </div>
-                    <span class="color-name">${scene.name}</span>
-                    <span class="color-best" style="color: ${scene.isRainbow ? '#ffffff' : scene.color}">${best > 0 ? '★ ' + best : ''}</span>
-                </div>
-            `;
-            if (!locked) opt.addEventListener('click', () => this.startGame(scene));
-            grid.appendChild(opt);
-        });
-    },
-
-    updatePlayAreaRect() {
-        this.playAreaRect = this.playArea.getBoundingClientRect();
-    },
-
-    cleanup() {
-        if (this.animationId) { cancelAnimationFrame(this.animationId); this.animationId = null; }
-        this.respawnTimeouts.forEach(t => clearTimeout(t));
-        this.respawnTimeouts = [];
-        this.bubbles = [];
-        this.playArea.innerHTML = '';
-        SceneRenderer.stop();
-        LightningRenderer.stop();
-    },
-
-    async startGame(scene) {
-        this._gameId++;
-        const myGameId = this._gameId;
-        this.cleanup();
-        this.currentScene = scene;
-        await AudioManager.setup();
-        AudioManager.startSceneMusic();
-
-        this.state = GameState.PLAYING;
-        this.score = 0;
-        this.streak = 0;
-        this.bestStreak = 0;
-        this.lastPopTime = 0;
-        this.timerLastTick = performance.now();
-        this.badBubbleId = null;
-        this.popsSinceReassign = 0;
-
-        // Update background
-        this.gameContainer.style.background = BG_COLOR;
-
-        // UI
-        this.scoreDisplay.textContent = '0';
-        this.scoreDisplay.style.display = 'flex';
-        this.startScreen.style.display = 'none';
-        this.gameOverScreen.classList.remove('visible');
-        this.gameOverScreen.style.display = 'none';
-        this.exitButton.style.display = 'block';
-        this.timerRing.style.display = 'block';
-        const effectiveColor = scene.isRainbow ? '#ffffff' : scene.color;
-        const effectiveDark = scene.isRainbow ? '#2d0090' : scene.dark;
-        const countText = document.getElementById('pop-count-text');
-        if (this.timerArc) {
-            this.timerArc.setAttribute('stroke', effectiveColor);
-            this.timerArc.setAttribute('stroke-dashoffset', '163');
-        }
-        if (countText) { countText.textContent = '0'; countText.setAttribute('fill', effectiveColor); }
-
-        SceneRenderer.init(this.sceneCanvas, effectiveColor, effectiveDark, scene.isRainbow);
-        LightningRenderer.init(this.lightningCanvas, effectiveColor);
-
-        requestAnimationFrame(() => {
-            this.updatePlayAreaRect();
-            this.createInitialBubbles(effectiveColor);
-            this.assignBadBubble();
-            this.startAnimationLoop();
-        });
-    },
-
-    createInitialBubbles(color) {
-        const count  = CONFIG.BUBBLE_COUNT;
-        const rect   = this.playAreaRect;
-        const areaW  = rect.width;
-        const areaH  = rect.height * 0.78;
-        const topPad = 90;
-        const pad    = 6;
-
-        const usableW = areaW - pad * 2;
-        const usableH = areaH - topPad - pad;
-
-        // Derive cols/rows from aspect ratio so all count bubbles always fit
-        const aspect = usableW / usableH;
-        const cols   = Math.max(1, Math.round(Math.sqrt(count * aspect)));
-        const rows   = Math.max(1, Math.ceil(count / cols));
-        const cellW  = usableW / cols;
-        const cellH  = usableH / rows;
-
-        // Shuffle cell indices for random placement
-        const cells = [];
-        for (let r = 0; r < rows; r++)
-            for (let c = 0; c < cols; c++)
-                cells.push({ c, r });
-        for (let i = cells.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [cells[i], cells[j]] = [cells[j], cells[i]];
-        }
-
-        for (let i = 0; i < count; i++) {
-            const cell = cells[i % cells.length];
-            const size = CONFIG.BUBBLE_SIZE_MIN + Math.random() * (CONFIG.BUBBLE_SIZE_MAX - CONFIG.BUBBLE_SIZE_MIN);
-            // Jitter stays within cell bounds so no overlap at spawn
-            const maxJitter = Math.max(0, (Math.min(cellW, cellH) - size) * 0.3);
-            const jx = (Math.random() - 0.5) * maxJitter * 2;
-            const jy = (Math.random() - 0.5) * maxJitter * 2;
-            const x  = pad     + cell.c * cellW + (cellW - size) / 2 + jx;
-            const y  = topPad  + cell.r * cellH + (cellH - size) / 2 + jy;
-            this._makeBubble(
-                Math.max(pad,    Math.min(areaW - size - pad, x)),
-                Math.max(topPad, Math.min(areaH - size - pad, y)),
-                size, color
-            );
-        }
-    },
-
-    _makeBubble(px, py, size, color) {
-        if (this.state !== GameState.PLAYING) return null;
-        const RAINBOW_COLORS = ['#fcd831','#f60000','#cb6ce6','#7ed957','#0cc0df','#5e17eb','#f35329'];
-        const isRainbow  = this.currentScene?.isRainbow;
-        const sceneColor = isRainbow
-            ? RAINBOW_COLORS[Math.floor(Math.random() * RAINBOW_COLORS.length)]
-            : (color || this.currentScene?.color || '#fcd831');
-
-        const el = document.createElement('div');
-        el.className = 'bubble';
-        const id = 'b_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
-        el.dataset.id = id;
-        el.style.width  = size + 'px';
-        el.style.height = size + 'px';
-
-        const r = parseInt(sceneColor.slice(1,3), 16);
-        const g = parseInt(sceneColor.slice(3,5), 16);
-        const b = parseInt(sceneColor.slice(5,7), 16);
-        el.style.background = `
-            radial-gradient(ellipse 38% 38% at 28% 22%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 40%, transparent 70%),
-            radial-gradient(ellipse 20% 15% at 68% 72%, rgba(255,255,255,0.35) 0%, transparent 60%),
-            radial-gradient(ellipse 100% 100% at 50% 50%, rgba(${r},${g},${b},0.95) 0%, rgba(${Math.max(0,r-40)},${Math.max(0,g-40)},${Math.max(0,b-40)},1) 100%)`;
-        el.style.boxShadow = `0 0 16px rgba(${r},${g},${b},0.4), 0 4px 12px rgba(0,0,0,0.3), inset 0 0 12px rgba(255,255,255,0.1)`;
-        el.style.border    = `1.5px solid rgba(255,255,255,0.25)`;
-        el.style.left = px + 'px';
-        el.style.top  = py + 'px';
-
-        // Organic breathing — each bubble on its own random cycle
-        const breathDur   = (3.0 + Math.random() * 2.5).toFixed(2);
-        const breathDelay = (Math.random() * -4).toFixed(2); // negative delay = start mid-cycle
-        el.style.setProperty('--breath-dur',   breathDur + 's');
-        el.style.setProperty('--breath-delay', breathDelay + 's');
-        el.classList.add('breathing');
-
-        // Physics state — low initial velocity, unique wobble frequency
-        const angle = Math.random() * Math.PI * 2;
-        const spd   = 0.05 + Math.random() * 0.1; // barely moving at start
-        const bubbleData = {
-            id, element: el, x: px, y: py, size,
-            vx: Math.cos(angle) * spd,
-            vy: Math.sin(angle) * spd,
-            wobbleOffset: Math.random() * Math.PI * 2,
-            wobbleFreq:   0.8 + Math.random() * 1.4,  // unique per bubble
-            dirTimer:     Math.random() * 300,          // stagger so not all nudge at once
-            dirInterval:  220 + Math.random() * 300,
-        };
-
-        const handleClick = (e) => { e.preventDefault(); e.stopPropagation(); this.handleBubbleClick(id); };
-        el.addEventListener('click', handleClick);
-        el.addEventListener('touchend', handleClick, { passive: false });
-        this.playArea.appendChild(el);
-        this.bubbles.push(bubbleData);
-        return id;
-    },
-
-    assignBadBubble() {
-        if (this.bubbles.length > 0) {
-            this.badBubbleId = this.bubbles[Math.floor(Math.random() * this.bubbles.length)].id;
-        }
-    },
-
-    handleBubbleClick(id) {
-        if (this.state !== GameState.PLAYING) return;
-        const idx = this.bubbles.findIndex(b => b.id === id);
-        if (idx === -1) return;
-        const bubble = this.bubbles[idx];
-
-        if (id === this.badBubbleId) {
-            this.handleBadBubble(bubble);
-        } else {
-            this.handleNormalBubble(bubble, idx);
-        }
-    },
-
-    handleNormalBubble(bubble, index) {
-        AudioManager.playPop();
-        const now = performance.now();
-
-        // === STREAK ===
-        if (now - this.lastPopTime < this.STREAK_WINDOW) {
-            this.streak++;
-        } else {
-            this.streak = 1;
-        }
-        this.lastPopTime = now;
-        if (this.streak > this.bestStreak) this.bestStreak = this.streak;
-
-        const bonus = 1;
-        this.score += bonus;
-        this.scoreDisplay.textContent = this.score;
-        localStorage.setItem('bb_total_pops', (parseInt(localStorage.getItem('bb_total_pops'))||0) + 1);
-
-        // Score bounce animation
-        this.scoreDisplay.classList.remove('score-bounce');
-        void this.scoreDisplay.offsetWidth;
-        this.scoreDisplay.classList.add('score-bounce');
-
-        // Floating +1 label
-        this.createComboFloat(bubble.x + bubble.size/2, bubble.y, bonus, this.currentScene.color);
-
-        // Splat effect
-        this.createSplat(bubble.x + bubble.size/2, bubble.y + bubble.size/2, this.currentScene.color);
-
-        bubble.element.classList.add('popping');
-        this.bubbles.splice(index, 1);
-
-        setTimeout(() => { if (bubble.element.parentNode) bubble.element.remove(); }, 300);
-        // No respawn — minesweeper style
-    },
-
-    createComboFloat(x, y, bonus, color) {
-        const el = document.createElement('div');
-        el.className = 'combo-float';
-        el.textContent = '+1';
-        el.style.left = (x - 16) + 'px';
-        el.style.top = (y - 10) + 'px';
-        el.style.color = '#ffffff';
-        el.style.textShadow = '0 0 6px rgba(255,255,255,0.5)';
-        el.style.fontSize = '1rem';
-        this.playArea.appendChild(el);
-        setTimeout(() => { if (el.parentNode) el.remove(); }, 900);
-    },
-
-    handleBadBubble(bubble) {
-        this.state = GameState.CHAIN_REACTION;
-
-        const cx = bubble.x + bubble.size/2;
-        const cy = bubble.y + bubble.size/2;
-        const el = bubble.element;
-
-        // STEP 1: Screen shake + big splat + shockwave
-        this.gameContainer.classList.remove('shake');
-        void this.gameContainer.offsetWidth;
-        this.gameContainer.classList.add('shake');
-        setTimeout(() => this.gameContainer.classList.remove('shake'), 500);
-        this.createSplat(cx, cy, '#ffffff');
-        this.createSplat(cx, cy, this.currentScene.color);
-
-        // Shockwave ring expanding outward
-        const shock = document.createElement('div');
-        shock.className = 'shockwave';
-        shock.style.left = cx + 'px';
-        shock.style.top = cy + 'px';
-        shock.style.width = bubble.size + 'px';
-        shock.style.height = bubble.size + 'px';
-        this.playArea.appendChild(shock);
-        setTimeout(() => { if (shock.parentNode) shock.remove(); }, 700);
-
-        el.style.transition = 'transform 0.35s ease-out, box-shadow 0.35s ease-out, background 0.2s ease';
-        el.style.transform = 'scale(2.2)';
-        el.style.background = `radial-gradient(circle, #ffffff 0%, ${this.currentScene.color}cc 40%, ${this.currentScene.color}44 100%)`;
-        el.style.boxShadow = `0 0 60px ${this.currentScene.color}, 0 0 120px ${this.currentScene.color}88`;
-        el.style.zIndex = '15';
-
-        // STEP 2: Fart sound plays with the explosion
-        AudioManager.playFart();
-
-        // STEP 3: Hold the dramatic moment, bubble pulses
-        setTimeout(() => {
-            el.style.transform = 'scale(1.6)';
-        }, 200);
-
-        // STEP 4: Bad bubble pops, fart blasts all remaining bubbles off screen
-        setTimeout(() => {
-            // Pop the bad bubble
-            el.style.transition = 'transform 0.2s ease-in, opacity 0.2s ease-in';
-            el.style.transform = 'scale(0)';
-            el.style.opacity = '0';
-            setTimeout(() => { if (el.parentNode) el.remove(); }, 200);
-
-            const badIdx = this.bubbles.findIndex(b => b.id === bubble.id);
-            if (badIdx !== -1) this.bubbles.splice(badIdx, 1);
-
-            // STEP 5: Chain explosion — each bubble inflates then bursts like the bad bubble
-            const remaining = [...this.bubbles];
-            this.bubbles = [];
-
-            // Scale delay so total chain never exceeds ~2s regardless of bubbles left
-            const maxChainMs = 2000;
-            const perBubble = Math.min(55, Math.floor(maxChainMs / Math.max(remaining.length, 1)));
-
-            remaining.forEach((b, i) => {
-                setTimeout(() => {
-                    const bel = b.element;
-                    bel.style.transition = 'transform 0.15s ease-out';
-                    bel.style.transform = 'scale(2.0)';
-                    bel.style.background = `radial-gradient(circle, #ffffff 0%, ${this.currentScene.color}cc 40%, ${this.currentScene.color}44 100%)`;
-                    bel.style.boxShadow = `0 0 40px ${this.currentScene.color}`;
-                    this.createSplat(b.x + b.size/2, b.y + b.size/2, this.currentScene.color);
-                    setTimeout(() => {
-                        bel.style.transition = 'transform 0.1s ease-in, opacity 0.1s ease-in';
-                        bel.style.transform = 'scale(0)';
-                        bel.style.opacity = '0';
-                        setTimeout(() => { if (bel.parentNode) bel.remove(); }, 100);
-                    }, 150);
-                }, i * perBubble);
-            });
-
-            // STEP 6: After chain finishes, typewriter then game over
-            const totalTime = remaining.length * perBubble + 300;
-            const gid = this._gameId;
-            setTimeout(() => {
-                if (this._gameId !== gid) return; // player exited — don't show end screen
-                this.showTypewriter('Bubbles will be back!', () => {
-                    if (this._gameId !== gid) return;
-                    this.showGameOver();
-                });
-            }, totalTime);
-
-        }, 700);
-    },
-
-    createSplat(cx, cy, color) {
-        const count = 10 + Math.floor(Math.random() * 6);
-        for (let i = 0; i < count; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'splat-particle';
-
-            const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.8;
-            const dist = 30 + Math.random() * 50;
-            const size = 4 + Math.random() * 10;
-            const duration = 0.3 + Math.random() * 0.3;
-
-            particle.style.cssText = `
-                left: ${cx - size/2}px;
-                top: ${cy - size/2}px;
-                width: ${size}px;
-                height: ${size}px;
-                background: ${color};
-                box-shadow: 0 0 6px ${color};
-                --tx: ${Math.cos(angle) * dist}px;
-                --ty: ${Math.sin(angle) * dist}px;
-                --duration: ${duration}s;
-            `;
-
-            this.playArea.appendChild(particle);
-            setTimeout(() => { if (particle.parentNode) particle.remove(); }, duration * 1000 + 50);
-        }
-    },
-
-    showTypewriter(message, callback) {
-        const overlay = document.getElementById('typewriter-overlay');
-        const textEl = document.getElementById('typewriter-text');
-        const RAINBOW_COLORS = ['#fcd831','#f60000','#cb6ce6','#7ed957','#0cc0df','#5e17eb','#f35329'];
-        const isRainbowScene = this.currentScene?.isRainbow;
-        const color = isRainbowScene ? '#cb6ce6' : (this.currentScene ? this.currentScene.color : '#ffffff');
-        overlay.classList.add('visible');
-        textEl.style.opacity = '1';
-        textEl.textContent = '';
-        AudioManager.playBubbly();
-
-        // Type out letter by letter
-        let i = 0;
-        const typeSpeed = 68;
-        const type = () => {
-            if (i < message.length) {
-                textEl.textContent += message[i];
-                i++;
-                setTimeout(type, typeSpeed);
-            }
-        };
-        type();
-
-        const typeDuration = message.length * typeSpeed + 100;
-
-        // Linger after typing completes
-        setTimeout(() => {
-            const lingerMs = 1200;
-
-            // After linger, fade text out while spawning bubbles
-            setTimeout(() => {
-                textEl.style.opacity = '0';
-
-                // Spawn bubbles across where text was centered
-                const containerRect = this.gameContainer.getBoundingClientRect();
-                const overlayRect = overlay.getBoundingClientRect();
-                const centerX = overlay.offsetWidth / 2;
-                const centerY = overlay.offsetHeight / 2;
-
-                const bubbleCount = 28;
-                for (let b = 0; b < bubbleCount; b++) {
-                    const bel = document.createElement('div');
-                    bel.className = 'text-bubble';
-                    const size = 6 + Math.random() * 16;
-                    const spread = 160;
-                    const startX = centerX + (Math.random() - 0.5) * spread - size/2;
-                    const startY = centerY + (Math.random() - 0.5) * 24 - size/2;
-                    const dx1 = (Math.random() - 0.5) * 40;
-                    const dx2 = (Math.random() - 0.5) * 80;
-                    const dur = 0.8 + Math.random() * 0.7;
-                    const delay = Math.random() * 0.25;
-
-                    // Bubble style — scene color (or random rainbow color) with highlight
-                    const bubbleColor = isRainbowScene ? RAINBOW_COLORS[Math.floor(Math.random() * RAINBOW_COLORS.length)] : color;
-                    const r = parseInt(bubbleColor.slice(1,3), 16);
-                    const g = parseInt(bubbleColor.slice(3,5), 16);
-                    const bv = parseInt(bubbleColor.slice(5,7), 16);
-
-                    bel.style.cssText = `
-                        left: ${startX}px;
-                        top: ${startY}px;
-                        width: ${size}px;
-                        height: ${size}px;
-                        background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.7), rgba(${r},${g},${bv},0.9) 60%);
-                        box-shadow: 0 0 ${size*0.4}px rgba(${r},${g},${bv},0.5);
-                        --dx1: ${dx1}px;
-                        --dx2: ${dx2}px;
-                        --dur: ${dur}s;
-                        animation-delay: ${delay}s;
-                        opacity: 0;
-                    `;
-                    overlay.appendChild(bel);
-                    setTimeout(() => { if (bel.parentNode) bel.remove(); }, (dur + delay + 0.1) * 1000);
-                }
-
-                // After bubbles finish rising, cut to end screen
-                setTimeout(() => {
-                    overlay.classList.remove('visible');
-                    textEl.style.opacity = '1';
-                    // clear any leftover bubble els
-                    overlay.querySelectorAll('.text-bubble').forEach(b => b.remove());
-                    if (callback) callback();
-                }, 1100);
-
-            }, lingerMs);
-
-        }, typeDuration);
-    },
-
-    showGameOver() {
-        this.state = GameState.GAME_OVER;
-        if (this.animationId) { cancelAnimationFrame(this.animationId); this.animationId = null; }
-        this.respawnTimeouts.forEach(t => clearTimeout(t));
-        this.respawnTimeouts = [];
-        AudioManager.startMusic();
-
-        if (this.score > this.bestScore) {
-            this.bestScore = this.score;
-            localStorage.setItem('badBubbleBest', this.bestScore);
-        }
-        localStorage.setItem('bb_games_played', (parseInt(localStorage.getItem('bb_games_played'))||0) + 1);
-        if (this.currentScene) {
-            const key = 'bb_best_' + this.currentScene.id;
-            const prev = parseInt(localStorage.getItem(key)) || 0;
-            if (this.score > prev) {
-                localStorage.setItem(key, this.score);
-                this.colorBests[this.currentScene.id] = this.score;
-            }
-        }
-
-        // Scene-colored background
-        const color = this.currentScene?.isRainbow ? '#cb6ce6' : (this.currentScene?.color || '#5e17eb');
-        const dark  = this.currentScene?.dark || '#2d0090';
-        const r = parseInt(color.slice(1,3), 16);
-        const g = parseInt(color.slice(3,5), 16);
-        const b = parseInt(color.slice(5,7), 16);
-        this.gameOverScreen.style.background =
-            `radial-gradient(ellipse at 50% 30%, rgba(${r},${g},${b},0.55) 0%, rgba(${r},${g},${b},0.18) 55%, ${BG_COLOR} 100%)`;
-
-        // Show streak record if notable
-
-
-        this.finalScoreEl.textContent = this.score;
-        this.bestScoreEl.textContent = this.bestScore;
-        this.scoreDisplay.style.display = 'none';
-        this.exitButton.style.display = 'none';
-        this.timerRing.style.display = 'none';
-        this.startScreen.style.display = 'none'; // make sure menu is hidden
-
-        // Start floating bubbles behind card
-        const endCanvas = document.getElementById('end-bubbles-canvas');
-        this.gameOverScreen.style.display = 'flex';
-        requestAnimationFrame(() => {
-            endCanvas.width  = endCanvas.offsetWidth;
-            endCanvas.height = endCanvas.offsetHeight;
-            EndBubbles.start(endCanvas, color);
-            this.gameOverScreen.classList.add('visible');
-        });
-    },
-
-    goHome() {
-        this._gameId++;
-        EndBubbles.stop();
-        AudioManager.startMusic();
-        this.cleanup();
-        this.buildColorGrid();
-        this.state = GameState.MENU;
-
-        // Hide everything first, then show start screen cleanly
-        this.gameOverScreen.classList.remove('visible');
-        this.gameOverScreen.style.display = 'none';
-        this.gameOverScreen.style.background = '';
-        this.scoreDisplay.style.display = 'none';
-        this.exitButton.style.display = 'none';
-        this.timerRing.style.display = 'none';
-        this.streakFlash && (this.streakFlash.style.opacity = '0');
-        document.getElementById('typewriter-overlay').classList.remove('visible');
-
-        this.startScreen.style.display = 'flex';
-        this.gameContainer.style.background = BG_COLOR;
-        MenuBubbles.start();
-    },
-
-    handleCollision(b1, b2) {
-        const r1 = b1.size / 2, r2 = b2.size / 2;
-        const cx1 = b1.x + r1, cy1 = b1.y + r1;
-        const cx2 = b2.x + r2, cy2 = b2.y + r2;
-        const dx = cx2 - cx1, dy = cy2 - cy1;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
-        const minDist = r1 + r2 + 2; // 2px padding between edges
-
-        if (dist >= minDist) return;
-
-        // Separate positions so they no longer overlap
-        const nx = dx / dist, ny = dy / dist;
-        const overlap = (minDist - dist) * 0.5;
-        b1.x -= nx * overlap; b1.y -= ny * overlap;
-        b2.x += nx * overlap; b2.y += ny * overlap;
-
-        // Elastic velocity exchange along collision normal — very soft restitution
-        const dvx = b2.vx - b1.vx, dvy = b2.vy - b1.vy;
-        const dot = dvx * nx + dvy * ny;
-        if (dot >= 0) return; // already separating
-
-        const restitution = 0.25; // soft bounce — bubbles drift apart gently
-        const impulse = (1 + restitution) * dot / 2;
-        b1.vx += impulse * nx; b1.vy += impulse * ny;
-        b2.vx -= impulse * nx; b2.vy -= impulse * ny;
-    },
-
-    startAnimationLoop() {
-        let lastTime = performance.now();
-        const animate = (currentTime) => {
-            if (this.state !== GameState.PLAYING) return;
-            const dt = Math.min((currentTime - lastTime) / 16, 3);
-            lastTime = currentTime;
-
-            this.updatePlayAreaRect();
-            const maxX = this.playAreaRect.width;
-            const maxY = this.playAreaRect.height * 0.78; // stay above lava (lava baseY is 0.62)
-
-            // Boundaries — top clears counter ring
-            const minBX = 4, maxBX = maxX - 4;
-            const minBY = 86, maxBY = maxY - 4;
-            const czX = maxX - 78, czY = 76; // counter zone exclusion
-
-            // === POP COUNTER RING ===
-            if (this.timerArc) {
-                const pct = Math.min(this.score / 50, 1);
-                this.timerArc.setAttribute('stroke-dashoffset', 163 * (1 - pct));
-                const sceneColor = this.currentScene?.isRainbow ? '#ffffff' : (this.currentScene?.color || '#ffffff');
-                this.timerArc.setAttribute('stroke', sceneColor);
-                const countText = document.getElementById('pop-count-text');
-                if (countText) { countText.textContent = this.score; countText.setAttribute('fill', sceneColor); }
-            }
-
-            // Gentle difficulty ramp — only nudge frequency speeds up
-            const speedMult = 1 + Math.min(this.score * 0.008, 0.5);
-
-            this.bubbles.forEach(b => {
-                // Advance personal wobble timer
-                b.wobbleOffset = (b.wobbleOffset || 0) + 0.008 * dt;
-
-                // Periodic gentle nudge in a random direction — low magnitude, infrequent
-                b.dirTimer = (b.dirTimer || 0) + dt;
-                if (b.dirTimer >= b.dirInterval) {
-                    b.dirTimer = 0;
-                    b.dirInterval = 220 + Math.random() * 300; // nudge every 3.5–8s
-                    const angle = Math.random() * Math.PI * 2;
-                    const mag   = 0.15 + Math.random() * 0.2;  // very gentle push
-                    b.vx += Math.cos(angle) * mag;
-                    b.vy += Math.sin(angle) * mag;
-                }
-
-                // Sinusoidal side-drift — each bubble on its own frequency
-                b.vx += Math.sin(b.wobbleOffset * b.wobbleFreq) * 0.008 * dt;
-
-                // Apply velocity
-                b.x += b.vx * speedMult * dt;
-                b.y += b.vy * speedMult * dt;
-
-                // Heavy damping — speed bleeds away fast so motion stays slow and dreamy
-                b.vx *= 0.975;
-                b.vy *= 0.975;
-
-                // Cap speed so nothing ever rushes
-                const spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-                const maxSpd = 0.8 * speedMult;
-                if (spd > maxSpd) { b.vx = (b.vx / spd) * maxSpd; b.vy = (b.vy / spd) * maxSpd; }
-
-                // Soft wall bounce — lose most energy on contact
-                if (b.x < minBX)           { b.x = minBX;           b.vx =  Math.abs(b.vx) * 0.3; }
-                if (b.x > maxBX - b.size)  { b.x = maxBX - b.size;  b.vx = -Math.abs(b.vx) * 0.3; }
-                if (b.y < minBY)           { b.y = minBY;           b.vy =  Math.abs(b.vy) * 0.3; }
-                if (b.y > maxBY - b.size)  { b.y = maxBY - b.size;  b.vy = -Math.abs(b.vy) * 0.3; }
-
-                // Counter zone — nudge out and redirect velocity
-                if (b.x + b.size > czX && b.y < czY) {
-                    const overL = (b.x + b.size) - czX;
-                    const overD = czY - b.y;
-                    if (overL < overD) { b.x = czX - b.size; b.vx = -Math.abs(b.vx) * 0.3; }
-                    else               { b.y = czY;          b.vy =  Math.abs(b.vy) * 0.3; }
-                }
-            });
-
-            // Collision pass — elastic drift-apart response
-            for (let i = 0; i < this.bubbles.length; i++) {
-                for (let j = i + 1; j < this.bubbles.length; j++) {
-                    this.handleCollision(this.bubbles[i], this.bubbles[j]);
-                }
-            }
-
-            // Final position apply + re-clamp after collisions shifted positions
-            this.bubbles.forEach(b => {
-                b.x = Math.max(minBX, Math.min(maxBX - b.size, b.x));
-                b.y = Math.max(minBY, Math.min(maxBY - b.size, b.y));
-                b.element.style.left = b.x + 'px';
-                b.element.style.top  = b.y + 'px';
-            });
-
-            this.animationId = requestAnimationFrame(animate);
-        };
-        this.animationId = requestAnimationFrame(animate);
+function loop() {
+    requestAnimationFrame(loop);
+    // Always fill solid black first — prevents any corner/seam artifacts
+    ctx.fillStyle = '#0a0908';
+    ctx.fillRect(0, 0, W, H);
+
+    if (sceneBitmap) ctx.drawImage(sceneBitmap, 0, 0, W, H);
+    else {
+        const g=ctx.createLinearGradient(0,0,0,H);
+        g.addColorStop(0,'#1e1c1a'); g.addColorStop(1,'#242220');
+        ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle=C.ground; ctx.fillRect(0,H*.82,W,H*.18);
     }
-};
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Clear scores from old respawn-based version
-    if (!localStorage.getItem('bb_v2_cleared')) {
-        localStorage.removeItem('badBubbleBest');
-        ['yellow','red','pink','green','violet','blue','orange','rainbow'].forEach(id => {
-            localStorage.removeItem('bb_best_' + id);
-        });
-        localStorage.setItem('bb_v2_cleared', '1');
+    Vents.update();
+    Vents.draw(ctx);
+
+    if (gs===GS.PLAY)  updateBubbles(W, H);
+    if (gs===GS.DYING) updateDying();
+    if (gs===GS.MENU)  updateBubbles(W, H);
+
+    bubbles.forEach(b=>drawBubble(ctx,b));
+    if (gs===GS.PLAY || gs===GS.DYING) {
+        Rat.update(W, H);
+        Rat.draw(ctx);
     }
-    Game.init();
+    if (gs===GS.PLAY)  { updateParticles(); drawParticles(ctx); }
+    if (gs===GS.DYING) drawDyingFx(ctx);
+    drawCounter(ctx);
+}
 
-    const killAudio = () => {
-        try {
-            ['menuTrack','bubblesTrack','sceneTrack'].forEach(k => {
-                if (AudioManager[k]) { AudioManager[k].pause(); AudioManager[k].currentTime = 0; }
-            });
-            if (AudioManager._fadeInterval) { clearInterval(AudioManager._fadeInterval); AudioManager._fadeInterval = null; }
-        } catch(e) {}
-    };
-    document.addEventListener('visibilitychange', () => { if (document.hidden) killAudio(); });
-    window.addEventListener('pagehide', killAudio);
-    window.addEventListener('blur', killAudio);
+/* ================================================
+   INIT
+================================================ */
+document.addEventListener('DOMContentLoaded', ()=>{
+    canvas = document.getElementById('main-canvas');
+    ctx    = canvas.getContext('2d');
 
-    // Start audio on very first touch/click anywhere — handles autoplay policy
-    const startAudio = () => {
-        AudioManager.setup();
-        document.removeEventListener('touchstart', startAudio);
-        document.removeEventListener('mousedown', startAudio);
-    };
-    document.addEventListener('touchstart', startAudio, { once: true });
-    document.addEventListener('mousedown', startAudio, { once: true });
+    // Double rAF — ensures browser has finished layout before we measure dimensions
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        resize();
+        window.addEventListener('resize', resize);
+
+        bakeMenuScene(W, H);
+        sceneBitmap = menuBitmap;
+        Vents.init(W, H);
+        for (let i=0;i<6;i++) bubbles.push(mkBubble(W, H, true));
+
+        canvas.addEventListener('click', e=>{
+            const r=canvas.getBoundingClientRect();
+            onTap((e.clientX-r.left)*(W/r.width), (e.clientY-r.top)*(H/r.height));
+        });
+        canvas.addEventListener('touchend', e=>{
+            e.preventDefault();
+            const t=e.changedTouches[0], r=canvas.getBoundingClientRect();
+            onTap((t.clientX-r.left)*(W/r.width),(t.clientY-r.top)*(H/r.height));
+        }, {passive:false});
+
+        document.getElementById('start-screen').addEventListener('click', startGame);
+        document.getElementById('end-screen').addEventListener('click', ()=>{ if(gs===GS.END) startGame(); });
+        document.getElementById('exit-btn').addEventListener('click', e=>{ e.stopPropagation(); goHome(); });
+
+        // counter drawn on canvas
+        loop();
+    }));
 });
 </script>
 </body>
