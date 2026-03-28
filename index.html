@@ -1448,7 +1448,7 @@ const SoundEngine = {
 
     _initAudio() {
         // Ambient bubbling loop
-        this._bubblesEl = new Audio('bubbles.mp3');
+        this._bubblesEl = new Audio('audio/bubbles.mp3');
         this._bubblesEl.loop = true;
         this._bubblesEl.volume = 0.0;
         this._bubblesEl.play().catch(()=>{});
@@ -1461,8 +1461,8 @@ const SoundEngine = {
         }, 60);
 
         // Preload one-shot sounds
-        this._popEl  = new Audio('pop.mp3');
-        this._fartEl = new Audio('fart.mp3');
+        this._popEl  = new Audio('audio/pop.mp3');
+        this._fartEl = new Audio('audio/fart.mp3');
         this._popEl.volume  = 0.7;
         this._fartEl.volume = 0.9;
     },
