@@ -1263,19 +1263,21 @@ function updateBubbles(W, H) {
     bubbles = bubbles.filter(b => !(b.fadingOut && b.alpha <= 0));
     if (bubbles.length < had && !bubbles.find(b=>b.id===badId)) ensureBadBubble();
 
-    // Counter exclusion zone — push bubbles away from top-left
-    const cZoneW = 160, cZoneH = 115;
+    // Counter exclusion zone — push bubbles away from top-left counter area
+    const cZoneW = 170, cZoneH = 120;
     bubbles.forEach(b => {
         if (b.fadingOut) return;
-        const nearX = Math.max(0, Math.min(b.x, cZoneW));
-        const nearY = Math.max(0, Math.min(b.y, cZoneH));
-        const dx = b.x - nearX, dy = b.y - nearY;
-        const dist = Math.sqrt(dx*dx + dy*dy) || 0.01;
-        if (dist < b.r + 8) {
-            const push = (b.r + 8 - dist) * 0.15;
-            b.x += (dx/dist) * push;
-            b.y += (dy/dist) * push;
-            if (b.x < cZoneW && b.y < cZoneH) b.vx += 0.3;
+        // If bubble center is inside the zone, force it out fast
+        if (b.x - b.r < cZoneW && b.y - b.r < cZoneH) {
+            // Track how long it's been stuck in zone
+            b.stuckT = (b.stuckT || 0) + 1;
+            // Push right if on left half, push up always
+            b.vx += (b.x < cZoneW * 0.5) ? 0.4 : 0.2;
+            b.vy -= 0.35;  // always push upward
+            // If stuck more than 2 seconds, just fade it out
+            if (b.stuckT > 120) b.fadingOut = true;
+        } else {
+            b.stuckT = 0;
         }
     });
 
@@ -1781,6 +1783,27 @@ document.addEventListener('DOMContentLoaded', ()=>{
         document.getElementById('start-screen').addEventListener('click', _startAudio, {once:true});
         canvas.addEventListener('touchend', _startAudio, {once:true});
         canvas.addEventListener('click', _startAudio, {once:true});
+
+        // Stop audio when user leaves or closes the page
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.pause();
+                if (SoundEngine._musicEl)   SoundEngine._musicEl.pause();
+            } else {
+                if (!isMuted) {
+                    if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.play().catch(()=>{});
+                    if (SoundEngine._musicEl)   SoundEngine._musicEl.play().catch(()=>{});
+                }
+            }
+        });
+        window.addEventListener('pagehide', () => {
+            if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.pause();
+            if (SoundEngine._musicEl)   SoundEngine._musicEl.pause();
+        });
+        window.addEventListener('beforeunload', () => {
+            if (SoundEngine._bubblesEl) SoundEngine._bubblesEl.pause();
+            if (SoundEngine._musicEl)   SoundEngine._musicEl.pause();
+        });
 
         // counter drawn on canvas
         loop();
